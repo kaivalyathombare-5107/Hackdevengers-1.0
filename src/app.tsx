@@ -9,6 +9,7 @@ import FormSteps from '@/components/FormSteps';
 import ResumePreview from '@/components/ResumePreview';
 import AiFeedback from '@/components/AiFeedback';
 import DownloadPdf from '@/components/DownloadPdf';
+import UploadPdfModal from '@/components/UploadPdfModal';
 
 function App() {
   const [data, setData] = useState<ResumeData>(emptyResume);
@@ -17,6 +18,9 @@ function App() {
   const [pdfText, setPdfText] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState('');
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<'uploading' | 'success' | 'error'>('uploading');
+  const [aiAutoTrigger, setAiAutoTrigger] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,14 +62,22 @@ function App() {
     if (file.type !== 'application/pdf') {
       setPdfError('Only PDF files are supported.');
       setPdfFileName('');
+      setUploadModalOpen(true);
+      setUploadStatus('error');
       return;
     }
 
     setPdfFileName(file.name);
+    setUploadModalOpen(true);
+    setUploadStatus('uploading');
 
     try {
-      const pdfjs = await import('pdfjs-dist/legacy/build/pdf');
-      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+      // Load pdf.js and point it at a LOCAL worker file bundled by Vite,
+      // instead of fetching a worker script from a CDN (which fails as
+      // an ES module import and breaks uploads).
+      const pdfjsLib = await import('pdfjs-dist');
+      const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
       const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
         const reader = new FileReader();
@@ -74,7 +86,7 @@ function App() {
         reader.readAsArrayBuffer(file);
       });
 
-      const doc = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      const doc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       let extracted = '';
       for (let pageIndex = 1; pageIndex <= doc.numPages; pageIndex += 1) {
         const page = await doc.getPage(pageIndex);
@@ -88,11 +100,18 @@ function App() {
         throw new Error('No readable text found in PDF.');
       }
       setPdfText(trimmed);
+      setUploadStatus('success');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'PDF parsing failed.';
       setPdfError(message);
       setPdfText(null);
+      setUploadStatus('error');
     }
+  };
+
+  const handleGetFeedbackFromModal = () => {
+    setUploadModalOpen(false);
+    setAiAutoTrigger(true);
   };
 
   return (
@@ -120,11 +139,31 @@ function App() {
             >
               <UploadCloud size={16} /> Upload PDF
             </button>
-            <AiFeedback data={data} pdfText={pdfText} pdfFileName={pdfFileName} pdfError={pdfError} />
+            <AiFeedback
+              data={data}
+              pdfText={pdfText}
+              pdfFileName={pdfFileName}
+              pdfError={pdfError}
+              autoTrigger={aiAutoTrigger}
+              onAutoTriggerHandled={() => setAiAutoTrigger(false)}
+            />
             <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={handlePdfFileChange} />
           </div>
         </div>
       </header>
+
+      <UploadPdfModal
+        open={uploadModalOpen}
+        status={uploadStatus}
+        fileName={pdfFileName}
+        errorMessage={pdfError}
+        onClose={() => setUploadModalOpen(false)}
+        onGetFeedback={handleGetFeedbackFromModal}
+        onRetry={() => {
+          setUploadModalOpen(false);
+          openPdfPicker();
+        }}
+      />
 
       {/* Main */}
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
