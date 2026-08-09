@@ -26,46 +26,70 @@ export default async function handler(req: any, res: any) {
       return res.status(400).send('Invalid payload');
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).send('Gemini API key is not configured.');
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!openaiKey && !geminiKey) {
+      return res.status(500).send('AI API key is not configured. Set OPENAI_API_KEY or GEMINI_API_KEY in Vercel.');
     }
 
     const prompt = buildPrompt(data);
+    let response;
+    let content;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert resume reviewer. Provide concise feedback on the resume, including strengths, improvement items, and formatting tips. Focus on the candidate details provided.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        max_tokens: 450,
-        temperature: 0.7,
-      }),
-    });
+    if (openaiKey) {
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert resume reviewer. Provide concise feedback on the resume, including strengths, improvement items, and formatting tips. Focus on the candidate details provided.',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          max_tokens: 450,
+          temperature: 0.7,
+        }),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      return res.status(response.status).send(`Gemini request failed: ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        return res.status(response.status).send(`OpenAI request failed: ${errorText}`);
+      }
+
+      const result = await response.json();
+      content = result?.choices?.[0]?.message?.content;
+    } else {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta2/models/gemini-1.5-pro:generateText?key=${encodeURIComponent(geminiKey)}`;
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: { text: prompt },
+          temperature: 0.7,
+          maxOutputTokens: 450,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return res.status(response.status).send(`Gemini request failed: ${errorText}`);
+      }
+
+      const result = await response.json();
+      content = result?.candidates?.[0]?.output;
     }
 
-    const result = await response.json();
-    const content = result?.choices?.[0]?.message?.content;
-
     if (!content) {
-      return res.status(500).send('No response from Gemini.');
+      return res.status(500).send('No AI response was returned.');
     }
 
     return res.status(200).json({ analysis: content });
