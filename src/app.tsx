@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileText, UploadCloud } from 'lucide-react';
 import type { ResumeData, StepKey } from '@/types';
 import { emptyResume, STEPS } from '@/types';
 import { useCompletion } from '@/hooks/useCompletion';
@@ -14,7 +14,11 @@ function App() {
   const [data, setData] = useState<ResumeData>(emptyResume);
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [pdfText, setPdfText] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState('');
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const completion = useCompletion(data);
 
@@ -38,6 +42,59 @@ function App() {
     setStep(i);
   };
 
+  const openPdfPicker = () => {
+    pdfInputRef.current?.click();
+  };
+
+  const handlePdfFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setPdfError(null);
+    setPdfText(null);
+    if (!file) {
+      setPdfFileName('');
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      setPdfError('Only PDF files are supported.');
+      setPdfFileName('');
+      return;
+    }
+
+    setPdfFileName(file.name);
+
+    try {
+      const pdfjs = await import('pdfjs-dist/legacy/build/pdf');
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as ArrayBuffer);
+        reader.onerror = () => reject(new Error('Unable to read PDF file.'));
+        reader.readAsArrayBuffer(file);
+      });
+
+      const doc = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      let extracted = '';
+      for (let pageIndex = 1; pageIndex <= doc.numPages; pageIndex += 1) {
+        const page = await doc.getPage(pageIndex);
+        const content = await page.getTextContent();
+        const pageText = content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ');
+        extracted += `${pageText}\n\n`;
+      }
+
+      const trimmed = extracted.trim();
+      if (!trimmed) {
+        throw new Error('No readable text found in PDF.');
+      }
+      setPdfText(trimmed);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'PDF parsing failed.';
+      setPdfError(message);
+      setPdfText(null);
+    }
+  };
+
   return (
     <div className="relative min-h-screen">
       <div className="ambient-bg" />
@@ -56,7 +113,15 @@ function App() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <DownloadPdf data={data} previewRef={previewRef} />
-            <AiFeedback data={data} />
+            <button
+              type="button"
+              onClick={openPdfPicker}
+              className="ghost-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+            >
+              <UploadCloud size={16} /> Upload PDF
+            </button>
+            <AiFeedback data={data} pdfText={pdfText} pdfFileName={pdfFileName} pdfError={pdfError} />
+            <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={handlePdfFileChange} />
           </div>
         </div>
       </header>
