@@ -101,7 +101,7 @@ function App() {
           {/* Preview column */}
           <div className="lg:sticky lg:top-6 lg:self-start">
             <div className="glass-strong rounded-2xl p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                 <span className="text-xs font-semibold tracking-wider uppercase text-slate-400">Live Preview</span>
                 <span className="text-[10px] text-slate-500">A4 format</span>
               </div>

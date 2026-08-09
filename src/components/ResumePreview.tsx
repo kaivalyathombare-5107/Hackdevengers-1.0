@@ -52,11 +52,11 @@ const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
         ) : (
           <div className="space-y-8">
             <div className="pb-5 border-b border-slate-200">
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-[32px] font-bold tracking-tight text-slate-900">
                 {data.fullName || 'Your Name'}
               </h1>
-              {data.title && <p className="mt-2 text-base sm:text-lg text-slate-600">{data.title}</p>}
-              {data.location && <p className="mt-1 text-sm sm:text-base text-slate-500">{data.location}</p>}
+              {data.title && <p className="mt-2 text-[15px] text-slate-600">{data.title}</p>}
+              {data.location && <p className="mt-1 text-[13px] text-slate-500">{data.location}</p>}
             </div>
 
             {data.summary && (
@@ -70,7 +70,7 @@ const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
                 <div className="space-y-6">
                   {data.experience.map((e) => (
                     <div key={e.id} className="relative pl-4 border-l-2 border-cyan-200">
-                      <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:items-baseline">
+                      <div className="flex flex-col gap-1">
                         <span className="font-semibold text-slate-800 text-[14px]">{e.position || 'Position'}</span>
                         <span className="text-[12px] text-slate-500 whitespace-nowrap">
                           {e.startDate}{e.startDate && (e.current || e.endDate) ? ' — ' : ''}{e.current ? 'Present' : e.endDate}
@@ -89,7 +89,7 @@ const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
                 <div className="space-y-5">
                   {data.projects.map((p) => (
                     <div key={p.id} className="space-y-1">
-                      <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:items-baseline">
+                      <div className="flex flex-col gap-1">
                         <p className="font-semibold text-slate-800 text-[14px]">{p.name || 'Project'}</p>
                         {p.link && (
                           <a href={p.link} target="_blank" rel="noreferrer" className="text-cyan-600 text-[12px] inline-flex items-center gap-1">
@@ -111,7 +111,7 @@ const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
                 <div className="space-y-5">
                   {data.education.map((e) => (
                     <div key={e.id}>
-                      <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:items-start">
+                      <div className="flex flex-col gap-1">
                         <div>
                           <p className="font-semibold text-slate-900 text-[14px]">{e.degree}{e.field ? ` in ${e.field}` : ''}</p>
                           <p className="text-slate-600 text-[13px] mt-1">{e.school}</p>
