@@ -10,7 +10,7 @@ const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
   const isEmpty = !data.fullName && !data.summary && !hasSidebar && data.experience.length === 0 && data.education.length === 0 && data.projects.length === 0;
 
   return (
-    <div ref={ref} className="resume-sheet w-full h-full flex bg-white text-[15px] leading-relaxed overflow-hidden">
+    <div ref={ref} className="resume-sheet flex bg-white text-[15px] leading-relaxed overflow-hidden">
       {/* ===== Sidebar (left) ===== */}
       {hasSidebar && (
         <aside className="w-[34%] min-w-[34%] bg-[#0f172a] text-slate-300 p-6 flex flex-col gap-6">

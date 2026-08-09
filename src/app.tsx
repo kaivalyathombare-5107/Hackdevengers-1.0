@@ -105,8 +105,8 @@ function App() {
                 <span className="text-xs font-semibold tracking-wider uppercase text-slate-400">Live Preview</span>
                 <span className="text-[10px] text-slate-500">A4 format</span>
               </div>
-              <div className="rounded-xl overflow-hidden shadow-2xl" style={{ boxShadow: '0 0 40px rgba(0,212,255,0.08)' }}>
-                <div className="aspect-[1/1.414] overflow-y-auto bg-white">
+              <div className="rounded-xl overflow-auto shadow-2xl" style={{ boxShadow: '0 0 40px rgba(0,212,255,0.08)' }}>
+                <div className="bg-white" style={{ width: '21cm', minWidth: '21cm', height: '29.7cm' }}>
                   <ResumePreview ref={previewRef} data={data} />
                 </div>
               </div>
