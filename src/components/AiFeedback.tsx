@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Loader2, X, AlertCircle, Lightbulb } from 'lucide-react';
+import { Sparkles, Loader2, X, AlertCircle, Lightbulb, FileText } from 'lucide-react';
 import type { ResumeData } from '@/types';
 
 type FeedbackItem = { type: 'tip' | 'warning' | 'good'; text: string };
@@ -13,6 +13,9 @@ export default function AiFeedback({ data }: Props) {
   const [loading, setLoading] = useState(false);
   const [feedbackText, setFeedbackText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState<string>('');
+  const [pdfText, setPdfText] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const analyze = async () => {
     setOpen(true);
@@ -24,7 +27,7 @@ export default function AiFeedback({ data }: Props) {
       const response = await fetch('/api/ai-feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data }),
+        body: JSON.stringify({ data, pdfText }),
       });
 
       if (!response.ok) {
@@ -48,6 +51,59 @@ export default function AiFeedback({ data }: Props) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setPdfError(null);
+    setPdfText(null);
+    if (!file) {
+      setPdfFileName('');
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      setPdfError('Only PDF files are supported.');
+      setPdfFileName('');
+      return;
+    }
+
+    setPdfFileName(file.name);
+
+    try {
+      const text = await extractTextFromPdf(file);
+      if (!text.trim()) {
+        throw new Error('No readable text found in PDF.');
+      }
+      setPdfText(text);
+    } catch (extractError) {
+      const message = extractError instanceof Error ? extractError.message : 'PDF parsing failed.';
+      setPdfError(message);
+      console.error('PDF extraction error:', message);
+    }
+  };
+
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf');
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = () => reject(new Error('Unable to read PDF file.'));
+      reader.readAsArrayBuffer(file);
+    });
+
+    const doc = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+    let extracted = '';
+    for (let pageIndex = 1; pageIndex <= doc.numPages; pageIndex += 1) {
+      const page = await doc.getPage(pageIndex);
+      const content = await page.getTextContent();
+      const pageText = content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ');
+      extracted += `${pageText}\n\n`;
+    }
+
+    return extracted.trim();
   };
 
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
@@ -96,6 +152,21 @@ export default function AiFeedback({ data }: Props) {
               >
                 <X size={18} />
               </button>
+            </div>
+
+            <div className="space-y-3 mb-4">
+              <label className="block text-sm font-medium text-slate-200">Upload PDF resume for AI review</label>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handlePdfUpload}
+                  className="text-sm text-slate-200"
+                />
+                {pdfFileName && <p className="text-[12px] text-slate-400">Selected: {pdfFileName}</p>}
+                {pdfError && <p className="text-[12px] text-rose-400">{pdfError}</p>}
+                {pdfText && <p className="text-[12px] text-emerald-300">PDF text extracted successfully.</p>}
+              </div>
             </div>
 
             {loading && (
