@@ -62,7 +62,6 @@ export default function AiFeedback({ data }: Props) {
       setFeedbackText(analysis.trim());
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to reach the AI service.';
-      setError('AI is unavailable. Showing backup feedback instead.');
       console.error('AI feedback error:', message);
       setFeedbackText(
         'Generic Resume AI Feedback — Fallback\n\n' +
