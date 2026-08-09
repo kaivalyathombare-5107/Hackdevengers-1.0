@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, X, CheckCircle2, AlertCircle, Lightbulb } from 'lucide-react';
 import type { ResumeData } from '@/types';
@@ -30,6 +31,91 @@ export default function AiFeedback({ data }: Props) {
     }
   };
 
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    let root = document.getElementById('ai-feedback-root');
+    if (!root) {
+      root = document.createElement('div');
+      root.id = 'ai-feedback-root';
+      document.body.appendChild(root);
+    }
+    setPortalRoot(root);
+    return () => {
+      if (root && root.parentElement) {
+        root.parentElement.removeChild(root);
+      }
+    };
+  }, []);
+
+  const overlay = (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => !loading && setOpen(false)} />
+          <motion.div
+            className="glass-strong relative w-full max-w-xl rounded-2xl p-6 max-h-[80vh] overflow-y-auto z-[10000]"
+            initial={{ scale: 0.92, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.92, y: 20 }}
+            transition={{ duration: 0.25 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles size={20} className="text-violet-400" />
+                <h3 className="text-lg font-bold text-white">AI Resume Feedback</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => !loading && setOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {loading && (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 size={32} className="text-violet-400 animate-spin" />
+                <p className="text-sm text-slate-400">Analyzing your resume...</p>
+              </div>
+            )}
+
+            {error && (
+              <div className="flex items-center gap-2 text-red-400 text-sm py-4">
+                <AlertCircle size={18} /> {error}
+              </div>
+            )}
+
+            {feedback && (
+              <div className="space-y-3">
+                {feedback.map((item, i) => (
+                  <motion.div
+                    key={i}
+                    className="feedback-item flex gap-2.5"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                  >
+                    {item.type === 'good' && <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />}
+                    {item.type === 'tip' && <Lightbulb size={18} className="text-cyan-400 shrink-0 mt-0.5" />}
+                    {item.type === 'warning' && <AlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />}
+                    <p className="text-sm text-slate-200">{item.text}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
     <>
       <button
@@ -39,72 +125,7 @@ export default function AiFeedback({ data }: Props) {
       >
         <Sparkles size={16} /> Get AI Feedback
       </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !loading && setOpen(false)} />
-            <motion.div
-              className="glass-strong relative w-full max-w-lg rounded-2xl p-6 max-h-[80vh] overflow-y-auto"
-              initial={{ scale: 0.92, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.92, y: 20 }}
-              transition={{ duration: 0.25 }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={20} className="text-violet-400" />
-                  <h3 className="text-lg font-bold text-white">AI Resume Feedback</h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => !loading && setOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {loading && (
-                <div className="flex flex-col items-center justify-center py-12 gap-3">
-                  <Loader2 size={32} className="text-violet-400 animate-spin" />
-                  <p className="text-sm text-slate-400">Analyzing your resume...</p>
-                </div>
-              )}
-
-              {error && (
-                <div className="flex items-center gap-2 text-red-400 text-sm py-4">
-                  <AlertCircle size={18} /> {error}
-                </div>
-              )}
-
-              {feedback && (
-                <div className="space-y-3">
-                  {feedback.map((item, i) => (
-                    <motion.div
-                      key={i}
-                      className="feedback-item flex gap-2.5"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.08 }}
-                    >
-                      {item.type === 'good' && <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />}
-                      {item.type === 'tip' && <Lightbulb size={18} className="text-cyan-400 shrink-0 mt-0.5" />}
-                      {item.type === 'warning' && <AlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />}
-                      <p className="text-sm text-slate-200">{item.text}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {portalRoot && createPortal(overlay, portalRoot)}
     </>
   );
 }
