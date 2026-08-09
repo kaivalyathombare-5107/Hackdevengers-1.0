@@ -1,19 +1,34 @@
-export default async function handler(request: Request) {
+export default async function handler(req: any, res: any) {
   try {
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 });
+    const method = req.method || (req?.request && req.request.method);
+    if (method !== 'POST') {
+      return res.status(405).send('Method not allowed');
     }
 
-    const body = await request.json();
-    const data = body?.data;
+    let body = req.body;
+    if (!body && typeof req.json === 'function') {
+      body = await req.json();
+    }
 
+    if (!body && req.on) {
+      body = await new Promise((resolve, reject) => {
+        let data = '';
+        req.on('data', (chunk: any) => {
+          data += chunk;
+        });
+        req.on('end', () => resolve(data ? JSON.parse(data) : {}));
+        req.on('error', reject);
+      });
+    }
+
+    const data = body?.data;
     if (!data) {
-      return new Response('Invalid payload', { status: 400 });
+      return res.status(400).send('Invalid payload');
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return new Response('Gemini API key is not configured.', { status: 500 });
+      return res.status(500).send('Gemini API key is not configured.');
     }
 
     const prompt = buildPrompt(data);
@@ -43,22 +58,19 @@ export default async function handler(request: Request) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      return new Response(`Gemini request failed: ${errorText}`, { status: response.status });
+      return res.status(response.status).send(`Gemini request failed: ${errorText}`);
     }
 
     const result = await response.json();
     const content = result?.choices?.[0]?.message?.content;
 
     if (!content) {
-      return new Response('No response from Gemini.', { status: 500 });
+      return res.status(500).send('No response from Gemini.');
     }
 
-    return new Response(JSON.stringify({ analysis: content }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(200).json({ analysis: content });
   } catch (error) {
-    return new Response('Internal server error', { status: 500 });
+    return res.status(500).send('Internal server error');
   }
 }
 
