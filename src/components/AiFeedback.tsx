@@ -4,9 +4,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, X, AlertCircle } from 'lucide-react';
 import type { ResumeData } from '@/types';
 
-type Props = { data: ResumeData; pdfText?: string | null; pdfFileName?: string; pdfError?: string | null };
+type Props = {
+  data: ResumeData;
+  pdfText?: string | null;
+  pdfFileName?: string;
+  pdfError?: string | null;
+  autoTrigger?: boolean;
+  onAutoTriggerHandled?: () => void;
+};
 
-export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Props) {
+export default function AiFeedback({ data, pdfText, pdfFileName, pdfError, autoTrigger, onAutoTriggerHandled }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [feedbackText, setFeedbackText] = useState<string | null>(null);
@@ -99,6 +106,13 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
     }
   };
 
+  useEffect(() => {
+    if (autoTrigger) {
+      analyze();
+      onAutoTriggerHandled?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoTrigger]);
 
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
@@ -162,7 +176,6 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
                     <p className="text-[12px] text-slate-400">AI feedback will analyze the form inputs instead.</p>
                   </div>
                 )}
-                {pdfError && <p className="text-[12px] text-rose-400 mt-2">{pdfError}</p>}
               </div>
             </div>
 
@@ -176,13 +189,6 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
             {error && (
               <div className="flex items-center gap-2 text-red-400 text-sm py-4">
                 <AlertCircle size={18} /> {error}
-              </div>
-            )}
-
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <Loader2 size={32} className="text-violet-400 animate-spin" />
-                <p className="text-sm text-slate-400">Analyzing your resume...</p>
               </div>
             )}
 
@@ -217,4 +223,3 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
     </>
   );
 }
-
