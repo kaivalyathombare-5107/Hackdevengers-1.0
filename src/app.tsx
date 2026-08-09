@@ -42,7 +42,6 @@ function App() {
     <div className="relative min-h-screen">
       <div className="ambient-bg" />
 
-      {/* Header */}
       <header className="relative z-10 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
@@ -61,10 +60,8 @@ function App() {
         </div>
       </header>
 
-      {/* Main */}
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-          {/* Form column */}
           <div className="glass-strong rounded-2xl p-5 sm:p-7">
             <StepIndicator current={step} completion={completion} onStepClick={goToStep} />
 
@@ -74,7 +71,6 @@ function App() {
               </AnimatePresence>
             </div>
 
-            {/* Nav buttons */}
             <div className="flex items-center justify-between mt-8 pt-5 border-t border-white/5">
               <button
                 type="button"
@@ -98,7 +94,6 @@ function App() {
             </div>
           </div>
 
-          {/* Preview column */}
           <div className="lg:sticky lg:top-6 lg:self-start">
             <div className="glass-strong rounded-2xl p-4 sm:p-5">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">

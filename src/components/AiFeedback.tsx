@@ -62,6 +62,7 @@ export default function AiFeedback({ data }: Props) {
       setFeedbackText(analysis.trim());
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to reach the AI service.';
+      setError('AI is unavailable. Showing backup feedback instead.');
       console.error('AI feedback error:', message);
       setFeedbackText(
         'Generic Resume AI Feedback — Fallback\n\n' +
@@ -152,12 +153,7 @@ export default function AiFeedback({ data }: Props) {
                 <p className="text-sm text-slate-400">Analyzing your resume...</p>
               </div>
             )}
-
-            {error && (
-              <div className="flex items-center gap-2 text-red-400 text-sm py-4">
-                <AlertCircle size={18} /> {error}
-              </div>
-            )}
+            
 
             {!loading && !feedbackText && !error && (
               <div className="border border-slate-700 rounded-2xl p-4 bg-slate-950/70 text-sm text-slate-300">
