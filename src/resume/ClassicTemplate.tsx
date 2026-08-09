@@ -9,7 +9,10 @@ export default function ClassicTemplate({ data }: TemplateProps) {
   return (
     <div className="resume-sheet bg-white text-[14px] leading-relaxed overflow-hidden h-full font-serif text-slate-900">
       <div className="p-12 space-y-7">
-        <header className="text-center border-b-2 border-slate-900 pb-5">
+        <header className="flex flex-col items-center text-center border-b-2 border-slate-900 pb-5">
+          {data.image && (
+            <img src={data.image} alt="Profile" className="w-24 h-24 rounded-full object-cover mb-4 grayscale" />
+          )}
           <h1 className="text-[36px] font-bold tracking-wide uppercase">
             {data.fullName || 'Your Name'}
           </h1>

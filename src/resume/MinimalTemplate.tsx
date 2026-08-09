@@ -9,18 +9,25 @@ export default function MinimalTemplate({ data }: TemplateProps) {
   return (
     <div className="resume-sheet bg-white text-[13px] leading-relaxed overflow-hidden h-full font-sans text-slate-800">
       <div className="p-14 space-y-10">
-        <header className="space-y-3">
-          <h1 className="text-[28px] font-light tracking-tight text-slate-900">
-            {data.fullName || 'Your Name'}
-          </h1>
-          {data.title && <p className="text-[14px] text-slate-500 font-light">{data.title}</p>}
-          {contact.length > 0 && (
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400 uppercase tracking-wider">
-              {contact.map((item) => (
-                <span key={item}>{item}</span>
-              ))}
+        <header className="space-y-4">
+          <div className="flex justify-between items-start">
+            <div className="space-y-3">
+              <h1 className="text-[28px] font-light tracking-tight text-slate-900">
+                {data.fullName || 'Your Name'}
+              </h1>
+              {data.title && <p className="text-[14px] text-slate-500 font-light">{data.title}</p>}
+              {contact.length > 0 && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400 uppercase tracking-wider">
+                  {contact.map((item) => (
+                    <span key={item}>{item}</span>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+            {data.image && (
+              <img src={data.image} alt="Profile" className="w-20 h-20 rounded-full object-cover shrink-0 ml-4 border border-slate-200" />
+            )}
+          </div>
         </header>
 
         {data.summary && (

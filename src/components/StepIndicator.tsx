@@ -17,17 +17,16 @@ export default function StepIndicator({ current, completion, onStepClick }: Prop
       {/* Progress bar */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold tracking-wider uppercase text-slate-400">
+          <span className="text-xs font-semibold tracking-wider uppercase text-slate-500">
             Resume Completion
           </span>
-          <span className="text-xs font-bold text-cyan-300 tabular-nums">
+          <span className="text-xs font-bold text-blue-600 tabular-nums">
             {Math.round(totalCompletion)}%
           </span>
         </div>
-        <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden border border-white/5">
+        <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500"
-            style={{ boxShadow: '0 0 12px rgba(0, 212, 255, 0.6)' }}
+            className="h-full rounded-full bg-blue-600"
             initial={{ width: 0 }}
             animate={{ width: `${totalCompletion}%` }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -41,7 +40,7 @@ export default function StepIndicator({ current, completion, onStepClick }: Prop
           const Icon = (Icons as unknown as Record<string, LucideIcon>)[step.icon];
           const isActive = i === current;
           const isDone = completion[step.key] >= 100;
-          const isClickable = i <= current || completion[step.key] > 0;
+          const isClickable = true;
 
           return (
             <div key={step.key} className="flex items-center flex-1 last:flex-none">
@@ -49,40 +48,37 @@ export default function StepIndicator({ current, completion, onStepClick }: Prop
                 type="button"
                 disabled={!isClickable}
                 onClick={() => isClickable && onStepClick(i)}
-                className="flex flex-col items-center gap-1.5 group"
+                className="flex flex-col items-center gap-1.5 group outline-none"
                 aria-label={step.label}
               >
                 <motion.div
-                  className={`step-dot relative flex items-center justify-center w-10 h-10 rounded-xl border ${
+                  className={`step-dot relative flex items-center justify-center w-10 h-10 rounded-xl border transition-colors ${
                     isActive
-                      ? 'border-cyan-400 bg-cyan-400/10'
+                      ? 'border-blue-600 bg-blue-50 text-blue-600 shadow-sm'
                       : isDone
-                      ? 'border-emerald-400/50 bg-emerald-400/10'
-                      : 'border-white/10 bg-white/5'
+                      ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-blue-400'
+                      : 'border-slate-200 bg-slate-50 text-slate-400'
                   }`}
                   animate={{
-                    scale: isActive ? 1.08 : 1,
-                    boxShadow: isActive
-                      ? '0 0 18px rgba(0, 212, 255, 0.5)'
-                      : '0 0 0px rgba(0, 0, 0, 0)',
+                    scale: isActive ? 1.05 : 1,
                   }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  {Icon && <Icon size={18} className={isActive ? 'text-cyan-300' : isDone ? 'text-emerald-300' : 'text-slate-400'} />}
+                  {Icon && <Icon size={18} className="current-color" />}
                   {isDone && !isActive && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0d0f17]" />
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white" />
                   )}
                 </motion.div>
                 <span
-                  className={`text-[10px] font-medium hidden sm:block ${
-                    isActive ? 'text-cyan-300' : isDone ? 'text-emerald-300/80' : 'text-slate-500'
+                  className={`text-[10px] font-semibold hidden sm:block ${
+                    isActive ? 'text-blue-700' : isDone ? 'text-slate-600' : 'text-slate-400'
                   }`}
                 >
                   {step.label}
                 </span>
               </button>
               {i < STEPS.length - 1 && (
-                <div className="flex-1 h-px mx-1 sm:mx-2 bg-gradient-to-r from-white/10 to-white/5" />
+                <div className="flex-1 h-px mx-1 sm:mx-2 bg-slate-200" />
               )}
             </div>
           );

@@ -13,9 +13,13 @@ export default function ModernTemplate({ data }: TemplateProps) {
       {hasSidebar && (
         <aside className="w-[34%] min-w-[34%] bg-[#0f172a] text-slate-300 p-6 flex flex-col gap-6">
           <div className="flex flex-col items-center text-center pb-4 border-b border-white/10">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-2xl font-bold text-white mb-3">
-              {initials(data.fullName)}
-            </div>
+            {data.image ? (
+              <img src={data.image} alt="Profile" className="w-20 h-20 rounded-full object-cover border-2 border-cyan-400 mb-3" />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-2xl font-bold text-white mb-3">
+                {initials(data.fullName)}
+              </div>
+            )}
           </div>
 
           {hasContact && (

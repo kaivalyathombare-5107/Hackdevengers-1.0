@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
-import type { ResumeData, EducationItem, ExperienceItem, SkillItem, ProjectItem } from '@/types';
+import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Upload } from 'lucide-react';
+import type { ResumeData, EducationItem, ExperienceItem, SkillItem, ProjectItem, ResumeTemplate } from '@/types';
 import { genId } from '@/types';
+import TemplatePicker from '@/TemplatePicker';
+import BulletEditor from '@/components/BulletEditor';
 
 type Props = {
   data: ResumeData;
@@ -17,25 +19,49 @@ const sectionVariants = {
 function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-6">
-      <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
-      <p className="text-sm text-slate-400 mt-1">{subtitle}</p>
+      <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{title}</h2>
+      <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
     </div>
   );
 }
 
-function Card({ children, onRemove }: { children: React.ReactNode; onRemove?: () => void }) {
+function Card({ children, onRemove, onMoveUp, onMoveDown, isFirst, isLast }: { children: React.ReactNode; onRemove?: () => void; onMoveUp?: () => void; onMoveDown?: () => void; isFirst?: boolean; isLast?: boolean }) {
   return (
-    <div className="glass rounded-xl p-4 relative group">
-      {onRemove && (
-        <button
-          type="button"
-          onClick={onRemove}
-          className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-          aria-label="Remove"
-        >
-          <Trash2 size={16} />
-        </button>
-      )}
+    <div className="bg-white border-slate-200 shadow-sm rounded-xl p-4 relative group">
+      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        {onMoveUp && (
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={isFirst}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+            aria-label="Move Up"
+          >
+            <ChevronUp size={16} />
+          </button>
+        )}
+        {onMoveDown && (
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={isLast}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+            aria-label="Move Down"
+          >
+            <ChevronDown size={16} />
+          </button>
+        )}
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+            aria-label="Remove"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -46,7 +72,7 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="ghost-btn w-full flex items-center justify-center gap-2 py-3 text-sm font-medium"
+      className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm w-full flex items-center justify-center gap-2 py-3 text-sm font-medium"
     >
       <Plus size={16} /> {label}
     </button>
@@ -68,18 +94,52 @@ export default function FormSteps({ data, update, step, direction }: Props & { s
       {step === 2 && <ExperienceStep data={data} update={update} />}
       {step === 3 && <SkillsStep data={data} update={update} />}
       {step === 4 && <ProjectsStep data={data} update={update} />}
+      {step === 5 && <TemplateStep data={data} update={update} />}
     </motion.div>
   );
 }
 
 /* ---------- Personal ---------- */
 function PersonalStep({ data, update }: Props) {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        update('image', reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div>
       <SectionHeader title="Personal Information" subtitle="Tell employers who you are and how to reach you." />
+      <div className="mb-6">
+        <label className="field-label">Profile Image (Optional)</label>
+        <div className="flex items-center gap-4 mt-2">
+          {data.image ? (
+            <div className="relative w-16 h-16 rounded-full overflow-hidden border border-slate-200 group">
+              <img src={data.image} alt="Profile" className="w-full h-full object-cover" />
+              <button 
+                onClick={() => update('image', '')}
+                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+              >
+                <Trash2 size={16} className="text-slate-900" />
+              </button>
+            </div>
+          ) : (
+            <label className="w-16 h-16 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors">
+              <Upload size={20} className="text-slate-500" />
+              <input type="file" accept="image/jpeg,image/png,image/jpg" className="hidden" onChange={handleImageUpload} />
+            </label>
+          )}
+          <span className="text-xs text-slate-500">JPG or PNG. 1:1 square ratio recommended.</span>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="field-label">Full Name</label>
+          <label className="field-label">Full Name <span className="text-red-500">*</span></label>
           <input className="field-input" placeholder="Jane Doe" value={data.fullName} onChange={(e) => update('fullName', e.target.value)} />
         </div>
         <div>
@@ -87,7 +147,7 @@ function PersonalStep({ data, update }: Props) {
           <input className="field-input" placeholder="Senior Software Engineer" value={data.title} onChange={(e) => update('title', e.target.value)} />
         </div>
         <div>
-          <label className="field-label">Email</label>
+          <label className="field-label">Email <span className="text-red-500">*</span></label>
           <input className="field-input" type="email" placeholder="jane@email.com" value={data.email} onChange={(e) => update('email', e.target.value)} />
         </div>
         <div>
@@ -127,20 +187,34 @@ function EducationStep({ data, update }: Props) {
   const remove = (id: string) => update('education', data.education.filter((e) => e.id !== id));
   const edit = (id: string, patch: Partial<EducationItem>) =>
     update('education', data.education.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  const move = (index: number, direction: 1 | -1) => {
+    const newItems = [...data.education];
+    const target = index + direction;
+    if (target < 0 || target >= newItems.length) return;
+    [newItems[index], newItems[target]] = [newItems[target], newItems[index]];
+    update('education', newItems);
+  };
 
   return (
     <div>
       <SectionHeader title="Education" subtitle="List your academic background, most recent first." />
       <div className="space-y-4">
-        {data.education.map((e) => (
-          <Card key={e.id} onRemove={() => remove(e.id)}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+        {data.education.map((e, index) => (
+          <Card 
+            key={e.id} 
+            onRemove={() => remove(e.id)}
+            onMoveUp={() => move(index, -1)}
+            onMoveDown={() => move(index, 1)}
+            isFirst={index === 0}
+            isLast={index === data.education.length - 1}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8 pt-3 sm:pt-0">
               <div>
-                <label className="field-label">School</label>
+                <label className="field-label">School <span className="text-red-500">*</span></label>
                 <input className="field-input" placeholder="Stanford University" value={e.school} onChange={(ev) => edit(e.id, { school: ev.target.value })} />
               </div>
               <div>
-                <label className="field-label">Degree</label>
+                <label className="field-label">Degree <span className="text-red-500">*</span></label>
                 <input className="field-input" placeholder="B.S." value={e.degree} onChange={(ev) => edit(e.id, { degree: ev.target.value })} />
               </div>
               <div>
@@ -182,20 +256,34 @@ function ExperienceStep({ data, update }: Props) {
   const remove = (id: string) => update('experience', data.experience.filter((e) => e.id !== id));
   const edit = (id: string, patch: Partial<ExperienceItem>) =>
     update('experience', data.experience.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  const move = (index: number, direction: 1 | -1) => {
+    const newItems = [...data.experience];
+    const target = index + direction;
+    if (target < 0 || target >= newItems.length) return;
+    [newItems[index], newItems[target]] = [newItems[target], newItems[index]];
+    update('experience', newItems);
+  };
 
   return (
     <div>
       <SectionHeader title="Work Experience" subtitle="Show your career journey and key achievements." />
       <div className="space-y-4">
-        {data.experience.map((e) => (
-          <Card key={e.id} onRemove={() => remove(e.id)}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+        {data.experience.map((e, index) => (
+          <Card 
+            key={e.id} 
+            onRemove={() => remove(e.id)}
+            onMoveUp={() => move(index, -1)}
+            onMoveDown={() => move(index, 1)}
+            isFirst={index === 0}
+            isLast={index === data.experience.length - 1}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8 pt-3 sm:pt-0">
               <div>
-                <label className="field-label">Company</label>
+                <label className="field-label">Company <span className="text-red-500">*</span></label>
                 <input className="field-input" placeholder="Google" value={e.company} onChange={(ev) => edit(e.id, { company: ev.target.value })} />
               </div>
               <div>
-                <label className="field-label">Position</label>
+                <label className="field-label">Position <span className="text-red-500">*</span></label>
                 <input className="field-input" placeholder="Software Engineer" value={e.position} onChange={(ev) => edit(e.id, { position: ev.target.value })} />
               </div>
               <div>
@@ -214,11 +302,17 @@ function ExperienceStep({ data, update }: Props) {
               </div>
               <div className="sm:col-span-2 flex items-center gap-2">
                 <input type="checkbox" id={`cur-${e.id}`} checked={e.current} onChange={(ev) => edit(e.id, { current: ev.target.checked, endDate: ev.target.checked ? '' : e.endDate })} className="accent-cyan-400" />
-                <label htmlFor={`cur-${e.id}`} className="text-sm text-slate-300">I currently work here</label>
+                <label htmlFor={`cur-${e.id}`} className="text-sm text-slate-700">I currently work here</label>
               </div>
               <div className="sm:col-span-2">
                 <label className="field-label">Description</label>
-                <textarea className="field-input" rows={3} placeholder="What you did, key results, impact metrics..." value={e.description} onChange={(ev) => edit(e.id, { description: ev.target.value })} />
+                <BulletEditor 
+                  value={e.description} 
+                  onChange={(v) => edit(e.id, { description: v })} 
+                  placeholder="What you did, key results, impact metrics..." 
+                  context={`${e.position} at ${e.company}`} 
+                  rows={4} 
+                />
               </div>
             </div>
           </Card>
@@ -240,6 +334,13 @@ function SkillsStep({ data, update }: Props) {
     setName('');
   };
   const remove = (id: string) => update('skills', data.skills.filter((s) => s.id !== id));
+  const move = (index: number, direction: 1 | -1) => {
+    const newItems = [...data.skills];
+    const target = index + direction;
+    if (target < 0 || target >= newItems.length) return;
+    [newItems[index], newItems[target]] = [newItems[target], newItems[index]];
+    update('skills', newItems);
+  };
 
   return (
     <div>
@@ -252,16 +353,23 @@ function SkillsStep({ data, update }: Props) {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), add())}
         />
-        <button type="button" onClick={add} className="neon-btn px-5 py-2 text-sm whitespace-nowrap">Add Skill</button>
+        <button type="button" onClick={add} className="px-5 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors shadow-sm px-5 py-2 text-sm whitespace-nowrap">Add Skill</button>
       </div>
       <div className="space-y-2.5">
-        {data.skills.map((s) => (
-          <div key={s.id} className="glass rounded-xl p-3 flex items-center justify-between gap-3 group">
+        {data.skills.map((s, index) => (
+          <div key={s.id} className="bg-white border-slate-200 shadow-sm rounded-xl p-3 flex items-center justify-between gap-3 group">
             <div className="flex items-center gap-3 min-w-0">
-              <GripVertical size={16} className="text-slate-600 shrink-0" />
-              <span className="font-medium text-white truncate">{s.name}</span>
+              <div className="flex flex-col items-center gap-0.5">
+                <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="text-slate-600 hover:text-cyan-400 disabled:opacity-30">
+                  <ChevronUp size={14} />
+                </button>
+                <button type="button" onClick={() => move(index, 1)} disabled={index === data.skills.length - 1} className="text-slate-600 hover:text-cyan-400 disabled:opacity-30">
+                  <ChevronDown size={14} />
+                </button>
+              </div>
+              <span className="font-medium text-slate-900 truncate">{s.name}</span>
             </div>
-            <button type="button" onClick={() => remove(s.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+            <button type="button" onClick={() => remove(s.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-colors">
               <Trash2 size={15} />
             </button>
           </div>
@@ -281,16 +389,30 @@ function ProjectsStep({ data, update }: Props) {
   const remove = (id: string) => update('projects', data.projects.filter((p) => p.id !== id));
   const edit = (id: string, patch: Partial<ProjectItem>) =>
     update('projects', data.projects.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  const move = (index: number, direction: 1 | -1) => {
+    const newItems = [...data.projects];
+    const target = index + direction;
+    if (target < 0 || target >= newItems.length) return;
+    [newItems[index], newItems[target]] = [newItems[target], newItems[index]];
+    update('projects', newItems);
+  };
 
   return (
     <div>
       <SectionHeader title="Projects" subtitle="Showcase work you're proud of. Links and tech stack help." />
       <div className="space-y-4">
-        {data.projects.map((p) => (
-          <Card key={p.id} onRemove={() => remove(p.id)}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+        {data.projects.map((p, index) => (
+          <Card 
+            key={p.id} 
+            onRemove={() => remove(p.id)}
+            onMoveUp={() => move(index, -1)}
+            onMoveDown={() => move(index, 1)}
+            isFirst={index === 0}
+            isLast={index === data.projects.length - 1}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8 pt-3 sm:pt-0">
               <div>
-                <label className="field-label">Project Name</label>
+                <label className="field-label">Project Name <span className="text-red-500">*</span></label>
                 <input className="field-input" placeholder="Resume Builder" value={p.name} onChange={(ev) => edit(p.id, { name: ev.target.value })} />
               </div>
               <div>
@@ -303,7 +425,13 @@ function ProjectsStep({ data, update }: Props) {
               </div>
               <div className="sm:col-span-2">
                 <label className="field-label">Description</label>
-                <textarea className="field-input" rows={2} placeholder="What it does and your role..." value={p.description} onChange={(ev) => edit(p.id, { description: ev.target.value })} />
+                <BulletEditor 
+                  value={p.description} 
+                  onChange={(v) => edit(p.id, { description: v })} 
+                  placeholder="What it does and your role..." 
+                  context={`Project: ${p.name}`} 
+                  rows={3} 
+                />
               </div>
             </div>
           </Card>
@@ -312,6 +440,16 @@ function ProjectsStep({ data, update }: Props) {
       <div className="mt-4">
         <AddButton label="Add Project" onClick={add} />
       </div>
+    </div>
+  );
+}
+
+/* ---------- Template ---------- */
+function TemplateStep({ data, update }: Props) {
+  return (
+    <div>
+      <SectionHeader title="Design Template" subtitle="Choose a style that fits your industry." />
+      <TemplatePicker value={data.template} onChange={(t) => update('template', t)} />
     </div>
   );
 }
