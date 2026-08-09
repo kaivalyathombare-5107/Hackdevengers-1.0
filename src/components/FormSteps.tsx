@@ -232,28 +232,18 @@ function ExperienceStep({ data, update }: Props) {
 }
 
 /* ---------- Skills ---------- */
-const LEVELS: SkillItem['level'][] = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
-const LEVEL_COLOR: Record<SkillItem['level'], string> = {
-  Beginner: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
-  Intermediate: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
-  Advanced: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
-  Expert: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
-};
-
 function SkillsStep({ data, update }: Props) {
   const [name, setName] = useInputState('');
   const add = () => {
     if (!name.trim()) return;
-    update('skills', [...data.skills, { id: genId(), name: name.trim(), level: 'Intermediate' }]);
+    update('skills', [...data.skills, { id: genId(), name: name.trim() }]);
     setName('');
   };
   const remove = (id: string) => update('skills', data.skills.filter((s) => s.id !== id));
-  const edit = (id: string, level: SkillItem['level']) =>
-    update('skills', data.skills.map((s) => (s.id === id ? { ...s, level } : s)));
 
   return (
     <div>
-      <SectionHeader title="Skills" subtitle="Add your technical and soft skills, then rate your level." />
+      <SectionHeader title="Skills" subtitle="Add your technical and soft skills." />
       <div className="flex gap-2 mb-5">
         <input
           className="field-input flex-1"
@@ -271,25 +261,9 @@ function SkillsStep({ data, update }: Props) {
               <GripVertical size={16} className="text-slate-600 shrink-0" />
               <span className="font-medium text-white truncate">{s.name}</span>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="flex gap-1">
-                {LEVELS.map((lvl) => (
-                  <button
-                    key={lvl}
-                    type="button"
-                    onClick={() => edit(s.id, lvl)}
-                    className={`text-[10px] font-semibold px-2 py-1 rounded-md border transition-all ${
-                      s.level === lvl ? LEVEL_COLOR[lvl] : 'border-white/10 text-slate-500 hover:text-slate-300'
-                    }`}
-                  >
-                    {lvl}
-                  </button>
-                ))}
-              </div>
-              <button type="button" onClick={() => remove(s.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
-                <Trash2 size={15} />
-              </button>
-            </div>
+            <button type="button" onClick={() => remove(s.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+              <Trash2 size={15} />
+            </button>
           </div>
         ))}
         {data.skills.length === 0 && (

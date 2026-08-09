@@ -30,7 +30,6 @@ export type ProjectItem = {
 export type SkillItem = {
   id: string;
   name: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
 };
 
 export type ResumeData = {
