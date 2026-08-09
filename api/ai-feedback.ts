@@ -1,5 +1,9 @@
-export async function POST(request: Request) {
+export default async function handler(request: Request) {
   try {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
+    }
+
     const body = await request.json();
     const data = body?.data;
 
