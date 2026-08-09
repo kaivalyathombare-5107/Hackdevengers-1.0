@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, X, AlertCircle } from 'lucide-react';
 import type { ResumeData } from '@/types';
 
-type Props = { data: ResumeData; pdfText?: string | null; pdfFileName?: string; pdfError?: string | null };
+type Props = { data: ResumeData };
 
-export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Props) {
+export default function AiFeedback({ data }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [feedbackText, setFeedbackText] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
     setError(null);
     setFeedbackText(null);
 
-    if (!hasResumeData() && !pdfText) {
+    if (!hasResumeData()) {
       setLoading(false);
       setFeedbackText('There is nothing to Analyze.');
       return;
@@ -44,7 +44,7 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
       const response = await fetch('/api/ai-feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data, pdfText }),
+        body: JSON.stringify({ data }),
       });
 
       if (!response.ok) {
@@ -99,7 +99,6 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
     }
   };
 
-
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -148,37 +147,6 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
               </button>
             </div>
 
-            <div className="space-y-3 mb-4">
-              <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-4 text-sm text-slate-200">
-                {pdfText ? (
-                  <div>
-                    <p className="font-semibold text-slate-100">PDF upload detected</p>
-                    {pdfFileName && <p className="text-[12px] text-slate-400">File: {pdfFileName}</p>}
-                    <p className="text-[12px] text-slate-400">The uploaded PDF will be included in the AI analysis.</p>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="font-semibold text-slate-100">No uploaded PDF</p>
-                    <p className="text-[12px] text-slate-400">AI feedback will analyze the form inputs instead.</p>
-                  </div>
-                )}
-                {pdfError && <p className="text-[12px] text-rose-400 mt-2">{pdfError}</p>}
-              </div>
-            </div>
-
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <Loader2 size={32} className="text-violet-400 animate-spin" />
-                <p className="text-sm text-slate-400">Analyzing your resume...</p>
-              </div>
-            )}
-
-            {error && (
-              <div className="flex items-center gap-2 text-red-400 text-sm py-4">
-                <AlertCircle size={18} /> {error}
-              </div>
-            )}
-
             {loading && (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
                 <Loader2 size={32} className="text-violet-400 animate-spin" />
@@ -189,7 +157,7 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
             {!loading && !feedbackText && !error && (
               <div className="border border-slate-700 rounded-2xl p-4 bg-slate-950/70 text-sm text-slate-300">
                 <p className="font-medium text-slate-100">AI resume feedback will appear here.</p>
-                <p className="text-[12px] text-slate-400 mt-1">Upload a PDF or fill out the form, then click the button below to analyze your resume.</p>
+                <p className="text-[12px] text-slate-400 mt-1">Fill out the form, then click the button below to analyze your resume.</p>
               </div>
             )}
 
@@ -217,4 +185,3 @@ export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Pro
     </>
   );
 }
-
