@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Loader2, X, CheckCircle2, AlertCircle, Lightbulb } from 'lucide-react';
+import { Sparkles, Loader2, X, AlertCircle, Lightbulb } from 'lucide-react';
 import type { ResumeData } from '@/types';
 
 type FeedbackItem = { type: 'tip' | 'warning' | 'good'; text: string };
@@ -11,21 +11,39 @@ type Props = { data: ResumeData };
 export default function AiFeedback({ data }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState<FeedbackItem[] | null>(null);
+  const [feedbackText, setFeedbackText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const analyze = async () => {
     setOpen(true);
     setLoading(true);
     setError(null);
-    setFeedback(null);
+    setFeedbackText(null);
 
     try {
-      // Placeholder for future API call
-      await new Promise((r) => setTimeout(r, 1800));
-      setFeedback(generateLocalFeedback(data));
-    } catch {
-      setError('Could not analyze your resume. Please try again.');
+      const response = await fetch('/api/ai-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data }),
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || 'AI feedback service failed.');
+      }
+
+      const result = await response.json();
+      const analysis = result.analysis || result.feedback || '';
+
+      if (!analysis) {
+        throw new Error('AI returned no feedback. Please try again.');
+      }
+
+      setFeedbackText(analysis.trim());
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to reach the AI service.';
+      setError(message);
+      setFeedbackText(formatLocalFeedback(data).join('\n\n'));
     } finally {
       setLoading(false);
     }
@@ -92,22 +110,9 @@ export default function AiFeedback({ data }: Props) {
               </div>
             )}
 
-            {feedback && (
+            {feedbackText && (
               <div className="space-y-3">
-                {feedback.map((item, i) => (
-                  <motion.div
-                    key={i}
-                    className="feedback-item flex gap-2.5"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                  >
-                    {item.type === 'good' && <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />}
-                    {item.type === 'tip' && <Lightbulb size={18} className="text-cyan-400 shrink-0 mt-0.5" />}
-                    {item.type === 'warning' && <AlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />}
-                    <p className="text-sm text-slate-200">{item.text}</p>
-                  </motion.div>
-                ))}
+                <p className="whitespace-pre-line text-sm text-slate-200">{feedbackText}</p>
               </div>
             )}
           </motion.div>
