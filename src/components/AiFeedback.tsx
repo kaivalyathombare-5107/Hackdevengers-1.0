@@ -42,8 +42,9 @@ export default function AiFeedback({ data }: Props) {
       setFeedbackText(analysis.trim());
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to reach the AI service.';
-      setError(message);
-      setFeedbackText(formatLocalFeedback(data).join('\n\n'));
+      setError('AI is unavailable. Showing backup feedback instead.');
+      console.error('AI feedback error:', message);
+      setFeedbackText(generateLocalFeedback(data).map((item) => `• ${item.text}`).join('\n'));
     } finally {
       setLoading(false);
     }
