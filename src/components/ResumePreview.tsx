@@ -6,47 +6,36 @@ type Props = { data: ResumeData };
 
 const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
   const hasContact = data.email || data.phone || data.location || data.website;
-  const hasSidebar = hasContact || data.education.length > 0;
-  const isEmpty = !data.fullName && !data.summary && !hasSidebar && data.experience.length === 0 && data.skills.length === 0 && data.projects.length === 0;
+  const hasSidebar = hasContact || data.skills.length > 0;
+  const isEmpty = !data.fullName && !data.summary && !hasSidebar && data.experience.length === 0 && data.education.length === 0 && data.projects.length === 0;
 
   return (
-    <div ref={ref} className="resume-sheet w-full h-full flex bg-white text-[12px] leading-relaxed overflow-hidden">
+    <div ref={ref} className="resume-sheet w-full h-full flex bg-white text-[15px] leading-relaxed overflow-hidden">
       {/* ===== Sidebar (left) ===== */}
       {hasSidebar && (
-        <aside className="w-[36%] min-w-[36%] bg-[#0f172a] text-slate-300 p-5 flex flex-col gap-5">
-          {/* Avatar + name */}
+        <aside className="w-[34%] min-w-[34%] bg-[#0f172a] text-slate-300 p-6 flex flex-col gap-6">
           <div className="flex flex-col items-center text-center pb-4 border-b border-white/10">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-2xl font-bold text-white mb-3">
               {initials(data.fullName)}
             </div>
-            <h1 className="text-base font-bold text-white tracking-tight leading-tight">
-              {data.fullName || 'Your Name'}
-            </h1>
-            {data.title && <p className="text-[11px] text-cyan-300 font-medium mt-0.5">{data.title}</p>}
           </div>
 
-          {/* Contact */}
           {hasContact && (
             <SideSection title="Contact">
-              <ul className="space-y-1.5">
-                {data.email && <ContactRow icon={<Mail size={11} />} text={data.email} />}
-                {data.phone && <ContactRow icon={<Phone size={11} />} text={data.phone} />}
-                {data.location && <ContactRow icon={<MapPin size={11} />} text={data.location} />}
-                {data.website && <ContactRow icon={<Globe size={11} />} text={data.website} />}
+              <ul className="space-y-2">
+                {data.email && <ContactRow icon={<Mail size={12} />} text={data.email} />}
+                {data.phone && <ContactRow icon={<Phone size={12} />} text={data.phone} />}
+                {data.location && <ContactRow icon={<MapPin size={12} />} text={data.location} />}
+                {data.website && <ContactRow icon={<Globe size={12} />} text={data.website} />}
               </ul>
             </SideSection>
           )}
 
-          {/* Education */}
-          {data.education.length > 0 && (
-            <SideSection title="Education">
-              <ul className="space-y-2.5">
-                {data.education.map((e) => (
-                  <li key={e.id}>
-                    <p className="text-slate-200 font-semibold text-[11px] leading-snug">{e.degree}{e.field ? ` in ${e.field}` : ''}</p>
-                    <p className="text-slate-400 text-[10px]">{e.school}</p>
-                    <p className="text-slate-500 text-[10px]">{e.startDate}{e.startDate && e.endDate ? ' — ' : ''}{e.endDate}</p>
-                  </li>
+          {data.skills.length > 0 && (
+            <SideSection title="Top Skills">
+              <ul className="space-y-2">
+                {data.skills.map((s) => (
+                  <li key={s.id} className="text-[12px] text-slate-200">{s.name}</li>
                 ))}
               </ul>
             </SideSection>
@@ -55,90 +44,81 @@ const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
       )}
 
       {/* ===== Main content (right) ===== */}
-      <main className="flex-1 p-6 text-slate-800 overflow-y-auto">
+      <main className="flex-1 p-10 text-slate-800 overflow-y-auto">
         {isEmpty ? (
           <div className="h-full flex items-center justify-center text-center text-slate-400">
             <p>Start filling out the form to see your resume come to life.</p>
           </div>
         ) : (
-          <div className="space-y-5">
-            {/* Summary */}
+          <div className="space-y-8">
+            <div className="pb-5 border-b border-slate-200">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">
+                {data.fullName || 'Your Name'}
+              </h1>
+              {data.title && <p className="mt-2 text-base sm:text-lg text-slate-600">{data.title}</p>}
+              {data.location && <p className="mt-1 text-sm sm:text-base text-slate-500">{data.location}</p>}
+            </div>
+
             {data.summary && (
-              <MainSection title="Profile">
-                <p className="text-slate-700">{data.summary}</p>
+              <MainSection title="Summary">
+                <p className="text-slate-700 text-[16px] leading-8">{data.summary}</p>
               </MainSection>
             )}
 
-            {/* Experience */}
             {data.experience.length > 0 && (
               <MainSection title="Experience">
-                <div className="space-y-3">
+                <div className="space-y-6">
                   {data.experience.map((e) => (
                     <div key={e.id} className="relative pl-4 border-l-2 border-cyan-200">
-                      <div className="flex justify-between items-baseline gap-2">
-                        <span className="font-semibold text-slate-800 text-[12px]">{e.position || 'Position'}</span>
-                        <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:items-baseline">
+                        <span className="font-semibold text-slate-800 text-[14px]">{e.position || 'Position'}</span>
+                        <span className="text-[12px] text-slate-500 whitespace-nowrap">
                           {e.startDate}{e.startDate && (e.current || e.endDate) ? ' — ' : ''}{e.current ? 'Present' : e.endDate}
                         </span>
                       </div>
-                      <p className="text-cyan-600 text-[11px] font-medium">{e.company || 'Company'}{e.location ? ` · ${e.location}` : ''}</p>
-                      {e.description && <p className="text-slate-600 text-[11px] mt-1 whitespace-pre-line">{e.description}</p>}
+                      <p className="text-cyan-600 text-[13px] font-medium">{e.company || 'Company'}{e.location ? ` · ${e.location}` : ''}</p>
+                      {e.description && <p className="text-slate-600 text-[14px] mt-2 whitespace-pre-line">{e.description}</p>}
                     </div>
                   ))}
                 </div>
               </MainSection>
             )}
 
-                {/* Skills */}
-            {data.skills.length > 0 && (
-              <MainSection title="Skills">
-                <ul className="space-y-2">
-                  {data.skills.map((s) => (
-                    <li key={s.id} className="text-slate-700">{s.name}</li>
-                  ))}
-                </ul>
-              </MainSection>
-            )}
-
-            {/* Projects */}
             {data.projects.length > 0 && (
               <MainSection title="Projects">
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {data.projects.map((p) => (
                     <div key={p.id} className="space-y-1">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="font-semibold text-slate-800 text-[12px]">{p.name || 'Project'}</p>
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:items-baseline">
+                        <p className="font-semibold text-slate-800 text-[14px]">{p.name || 'Project'}</p>
                         {p.link && (
-                          <a href={p.link} target="_blank" rel="noreferrer" className="text-cyan-600 text-[10px] inline-flex items-center gap-1">
+                          <a href={p.link} target="_blank" rel="noreferrer" className="text-cyan-600 text-[12px] inline-flex items-center gap-1">
                             <Link2 size={10} />
                             Link
                           </a>
                         )}
                       </div>
-                      {p.tech && <p className="text-slate-600 text-[11px]">{p.tech}</p>}
-                      {p.description && <p className="text-slate-700 text-[11px] whitespace-pre-line">{p.description}</p>}
+                      {p.tech && <p className="text-slate-600 text-[14px]">{p.tech}</p>}
+                      {p.description && <p className="text-slate-700 text-[14px] whitespace-pre-line">{p.description}</p>}
                     </div>
                   ))}
                 </div>
               </MainSection>
             )}
 
-            {/* Education (main side fallback when sidebar is empty) */}
-            {data.education.length > 0 && !hasSidebar && (
+            {data.education.length > 0 && (
               <MainSection title="Education">
-                <div className="space-y-2">
+                <div className="space-y-5">
                   {data.education.map((e) => (
-                    <div key={e.id} className="relative pl-4 border-l-2 border-cyan-200">
-                      <div className="flex justify-between items-baseline gap-2">
-                        <span className="font-semibold text-slate-800 text-[12px]">
-                          {e.degree}{e.field ? ` in ${e.field}` : ''}
-                        </span>
-                        <span className="text-[10px] text-slate-500 whitespace-nowrap">
-                          {e.startDate}{e.startDate && e.endDate ? ' — ' : ''}{e.endDate}
-                        </span>
+                    <div key={e.id}>
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:items-start">
+                        <div>
+                          <p className="font-semibold text-slate-900 text-[14px]">{e.degree}{e.field ? ` in ${e.field}` : ''}</p>
+                          <p className="text-slate-600 text-[13px] mt-1">{e.school}</p>
+                        </div>
+                        <span className="text-[12px] text-slate-500 whitespace-nowrap">{e.startDate}{e.startDate && e.endDate ? ' — ' : ''}{e.endDate}</span>
                       </div>
-                      <p className="text-cyan-600 text-[11px] font-medium">{e.school}</p>
-                      {e.description && <p className="text-slate-600 text-[11px] mt-0.5">{e.description}</p>}
+                      {e.description && <p className="text-slate-700 text-[13px] mt-2">{e.description}</p>}
                     </div>
                   ))}
                 </div>
@@ -175,11 +155,11 @@ function SideSection({ title, children }: { title: string; children: React.React
 function MainSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-[11px] font-bold tracking-[0.12em] uppercase text-slate-800 mb-2.5 pb-1 border-b-2 border-slate-200 flex items-center gap-2">
-        {title === 'Experience' && <Briefcase size={12} className="text-cyan-600" />}
-        {title === 'Education' && <GraduationCap size={12} className="text-cyan-600" />}
-        {title === 'Profile' && <Sparkles size={12} className="text-cyan-600" />}
-        {title === 'Projects' && <FolderGit2 size={12} className="text-cyan-600" />}
+      <h2 className="text-sm sm:text-[14px] font-bold tracking-[0.12em] uppercase text-slate-800 mb-3 pb-1 border-b-2 border-slate-200 flex items-center gap-2">
+        {title === 'Experience' && <Briefcase size={14} className="text-cyan-600" />}
+        {title === 'Education' && <GraduationCap size={14} className="text-cyan-600" />}
+        {title === 'Summary' && <Sparkles size={14} className="text-cyan-600" />}
+        {title === 'Projects' && <FolderGit2 size={14} className="text-cyan-600" />}
         {title}
       </h2>
       {children}
@@ -189,8 +169,8 @@ function MainSection({ title, children }: { title: string; children: React.React
 
 function ContactRow({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <li className="flex items-center gap-2 text-[10px] text-slate-300 break-all">
-      <span className="text-cyan-400 shrink-0">{icon}</span>
+    <li className="flex items-start gap-2 text-[11px] text-slate-300 break-all">
+      <span className="text-cyan-400 shrink-0 mt-0.5">{icon}</span>
       <span>{text}</span>
     </li>
   );

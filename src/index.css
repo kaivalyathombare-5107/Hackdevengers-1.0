@@ -166,6 +166,8 @@ textarea.field-input {
 /* Resume preview specific */
 .resume-sheet {
   font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
 }
 
 /* Subtle pulse for AI button */
