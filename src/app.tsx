@@ -9,11 +9,21 @@ import FormSteps from '@/components/FormSteps';
 import ResumePreview from '@/components/ResumePreview';
 import AiFeedback from '@/components/AiFeedback';
 import DownloadPdf from '@/components/DownloadPdf';
+import UploadPdfModal from '@/components/UploadPdfModal';
 
 function App() {
   const [data, setData] = useState<ResumeData>(emptyResume);
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(0);
+<<<<<<< HEAD
+=======
+  const [pdfText, setPdfText] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState('');
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<'uploading' | 'success' | 'error'>('uploading');
+  const [aiAutoTrigger, setAiAutoTrigger] = useState(false);
+>>>>>>> e0b0375577d331841cc38f0a65b80fbe813ea87b
   const previewRef = useRef<HTMLDivElement>(null);
 
   const completion = useCompletion(data);
@@ -38,6 +48,77 @@ function App() {
     setStep(i);
   };
 
+<<<<<<< HEAD
+=======
+  const openPdfPicker = () => {
+    pdfInputRef.current?.click();
+  };
+
+  const handlePdfFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setPdfError(null);
+    setPdfText(null);
+    if (!file) {
+      setPdfFileName('');
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      setPdfError('Only PDF files are supported.');
+      setPdfFileName('');
+      setUploadModalOpen(true);
+      setUploadStatus('error');
+      return;
+    }
+
+    setPdfFileName(file.name);
+    setUploadModalOpen(true);
+    setUploadStatus('uploading');
+
+    try {
+      // Load pdf.js and point it at a LOCAL worker file bundled by Vite,
+      // instead of fetching a worker script from a CDN (which fails as
+      // an ES module import and breaks uploads).
+      const pdfjsLib = await import('pdfjs-dist');
+      const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+
+      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as ArrayBuffer);
+        reader.onerror = () => reject(new Error('Unable to read PDF file.'));
+        reader.readAsArrayBuffer(file);
+      });
+
+      const doc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let extracted = '';
+      for (let pageIndex = 1; pageIndex <= doc.numPages; pageIndex += 1) {
+        const page = await doc.getPage(pageIndex);
+        const content = await page.getTextContent();
+        const pageText = content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ');
+        extracted += `${pageText}\n\n`;
+      }
+
+      const trimmed = extracted.trim();
+      if (!trimmed) {
+        throw new Error('No readable text found in PDF.');
+      }
+      setPdfText(trimmed);
+      setUploadStatus('success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'PDF parsing failed.';
+      setPdfError(message);
+      setPdfText(null);
+      setUploadStatus('error');
+    }
+  };
+
+  const handleGetFeedbackFromModal = () => {
+    setUploadModalOpen(false);
+    setAiAutoTrigger(true);
+  };
+
+>>>>>>> e0b0375577d331841cc38f0a65b80fbe813ea87b
   return (
     <div className="relative min-h-screen">
       <div className="ambient-bg" />
@@ -55,11 +136,47 @@ function App() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <DownloadPdf data={data} previewRef={previewRef} />
+<<<<<<< HEAD
             <AiFeedback data={data} />
+=======
+            <button
+              type="button"
+              onClick={openPdfPicker}
+              className="ghost-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+            >
+              <UploadCloud size={16} /> Upload PDF
+            </button>
+            <AiFeedback
+              data={data}
+              pdfText={pdfText}
+              pdfFileName={pdfFileName}
+              pdfError={pdfError}
+              autoTrigger={aiAutoTrigger}
+              onAutoTriggerHandled={() => setAiAutoTrigger(false)}
+            />
+            <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={handlePdfFileChange} />
+>>>>>>> e0b0375577d331841cc38f0a65b80fbe813ea87b
           </div>
         </div>
       </header>
 
+<<<<<<< HEAD
+=======
+      <UploadPdfModal
+        open={uploadModalOpen}
+        status={uploadStatus}
+        fileName={pdfFileName}
+        errorMessage={pdfError}
+        onClose={() => setUploadModalOpen(false)}
+        onGetFeedback={handleGetFeedbackFromModal}
+        onRetry={() => {
+          setUploadModalOpen(false);
+          openPdfPicker();
+        }}
+      />
+
+      {/* Main */}
+>>>>>>> e0b0375577d331841cc38f0a65b80fbe813ea87b
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           <div className="glass-strong rounded-2xl p-5 sm:p-7">

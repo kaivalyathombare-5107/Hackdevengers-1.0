@@ -4,9 +4,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, X, AlertCircle } from 'lucide-react';
 import type { ResumeData } from '@/types';
 
+<<<<<<< HEAD
 type Props = { data: ResumeData };
 
 export default function AiFeedback({ data }: Props) {
+=======
+type Props = {
+  data: ResumeData;
+  pdfText?: string | null;
+  pdfFileName?: string;
+  pdfError?: string | null;
+  autoTrigger?: boolean;
+  onAutoTriggerHandled?: () => void;
+};
+
+export default function AiFeedback({ data, pdfText, pdfFileName, pdfError, autoTrigger, onAutoTriggerHandled }: Props) {
+>>>>>>> e0b0375577d331841cc38f0a65b80fbe813ea87b
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [feedbackText, setFeedbackText] = useState<string | null>(null);
@@ -99,6 +112,17 @@ export default function AiFeedback({ data }: Props) {
     }
   };
 
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    if (autoTrigger) {
+      analyze();
+      onAutoTriggerHandled?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoTrigger]);
+
+>>>>>>> e0b0375577d331841cc38f0a65b80fbe813ea87b
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -147,6 +171,26 @@ export default function AiFeedback({ data }: Props) {
               </button>
             </div>
 
+<<<<<<< HEAD
+=======
+            <div className="space-y-3 mb-4">
+              <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-4 text-sm text-slate-200">
+                {pdfText ? (
+                  <div>
+                    <p className="font-semibold text-slate-100">PDF upload detected</p>
+                    {pdfFileName && <p className="text-[12px] text-slate-400">File: {pdfFileName}</p>}
+                    <p className="text-[12px] text-slate-400">The uploaded PDF will be included in the AI analysis.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-semibold text-slate-100">No uploaded PDF</p>
+                    <p className="text-[12px] text-slate-400">AI feedback will analyze the form inputs instead.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+>>>>>>> e0b0375577d331841cc38f0a65b80fbe813ea87b
             {loading && (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
                 <Loader2 size={32} className="text-violet-400 animate-spin" />
@@ -154,6 +198,15 @@ export default function AiFeedback({ data }: Props) {
               </div>
             )}
 
+<<<<<<< HEAD
+=======
+            {error && (
+              <div className="flex items-center gap-2 text-red-400 text-sm py-4">
+                <AlertCircle size={18} /> {error}
+              </div>
+            )}
+
+>>>>>>> e0b0375577d331841cc38f0a65b80fbe813ea87b
             {!loading && !feedbackText && !error && (
               <div className="border border-slate-700 rounded-2xl p-4 bg-slate-950/70 text-sm text-slate-300">
                 <p className="font-medium text-slate-100">AI resume feedback will appear here.</p>
