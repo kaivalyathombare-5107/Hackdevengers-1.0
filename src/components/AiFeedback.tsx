@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Loader2, X, AlertCircle, Lightbulb, FileText } from 'lucide-react';
+import { Sparkles, Loader2, X, AlertCircle } from 'lucide-react';
 import type { ResumeData } from '@/types';
-
-type FeedbackItem = { type: 'tip' | 'warning' | 'good'; text: string };
 
 type Props = { data: ResumeData; pdfText?: string | null; pdfFileName?: string; pdfError?: string | null };
 
-export default function AiFeedback({ data }: Props) {
+export default function AiFeedback({ data, pdfText, pdfFileName, pdfError }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [feedbackText, setFeedbackText] = useState<string | null>(null);
@@ -101,58 +99,6 @@ export default function AiFeedback({ data }: Props) {
     }
   };
 
-  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    setPdfError(null);
-    setPdfText(null);
-    if (!file) {
-      setPdfFileName('');
-      return;
-    }
-
-    if (file.type !== 'application/pdf') {
-      setPdfError('Only PDF files are supported.');
-      setPdfFileName('');
-      return;
-    }
-
-    setPdfFileName(file.name);
-
-    try {
-      const text = await extractTextFromPdf(file);
-      if (!text.trim()) {
-        throw new Error('No readable text found in PDF.');
-      }
-      setPdfText(text);
-    } catch (extractError) {
-      const message = extractError instanceof Error ? extractError.message : 'PDF parsing failed.';
-      setPdfError(message);
-      console.error('PDF extraction error:', message);
-    }
-  };
-
-  const extractTextFromPdf = async (file: File): Promise<string> => {
-    const pdfjs = await import('pdfjs-dist/legacy/build/pdf');
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-
-    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as ArrayBuffer);
-      reader.onerror = () => reject(new Error('Unable to read PDF file.'));
-      reader.readAsArrayBuffer(file);
-    });
-
-    const doc = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-    let extracted = '';
-    for (let pageIndex = 1; pageIndex <= doc.numPages; pageIndex += 1) {
-      const page = await doc.getPage(pageIndex);
-      const content = await page.getTextContent();
-      const pageText = content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ');
-      extracted += `${pageText}\n\n`;
-    }
-
-    return extracted.trim();
-  };
 
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
@@ -203,17 +149,20 @@ export default function AiFeedback({ data }: Props) {
             </div>
 
             <div className="space-y-3 mb-4">
-              <label className="block text-sm font-medium text-slate-200">Upload PDF resume for AI review</label>
-              <div className="flex flex-col gap-2">
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handlePdfUpload}
-                  className="text-sm text-slate-200"
-                />
-                {pdfFileName && <p className="text-[12px] text-slate-400">Selected: {pdfFileName}</p>}
-                {pdfError && <p className="text-[12px] text-rose-400">{pdfError}</p>}
-                {pdfText && <p className="text-[12px] text-emerald-300">PDF text extracted successfully.</p>}
+              <div className="rounded-2xl border border-slate-700 bg-slate-950/80 p-4 text-sm text-slate-200">
+                {pdfText ? (
+                  <div>
+                    <p className="font-semibold text-slate-100">PDF upload detected</p>
+                    {pdfFileName && <p className="text-[12px] text-slate-400">File: {pdfFileName}</p>}
+                    <p className="text-[12px] text-slate-400">The uploaded PDF will be included in the AI analysis.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-semibold text-slate-100">No uploaded PDF</p>
+                    <p className="text-[12px] text-slate-400">AI feedback will analyze the form inputs instead.</p>
+                  </div>
+                )}
+                {pdfError && <p className="text-[12px] text-rose-400 mt-2">{pdfError}</p>}
               </div>
             </div>
 
@@ -227,6 +176,20 @@ export default function AiFeedback({ data }: Props) {
             {error && (
               <div className="flex items-center gap-2 text-red-400 text-sm py-4">
                 <AlertCircle size={18} /> {error}
+              </div>
+            )}
+
+            {loading && (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 size={32} className="text-violet-400 animate-spin" />
+                <p className="text-sm text-slate-400">Analyzing your resume...</p>
+              </div>
+            )}
+
+            {!loading && !feedbackText && !error && (
+              <div className="border border-slate-700 rounded-2xl p-4 bg-slate-950/70 text-sm text-slate-300">
+                <p className="font-medium text-slate-100">AI resume feedback will appear here.</p>
+                <p className="text-[12px] text-slate-400 mt-1">Upload a PDF or fill out the form, then click the button below to analyze your resume.</p>
               </div>
             )}
 
@@ -255,41 +218,3 @@ export default function AiFeedback({ data }: Props) {
   );
 }
 
-function generateLocalFeedback(data: ResumeData): FeedbackItem[] {
-  const items: FeedbackItem[] = [];
-
-  if (!data.fullName) items.push({ type: 'warning', text: 'Your full name is missing — this is essential on any resume.' });
-  else items.push({ type: 'good', text: 'Your name is set, making your resume instantly identifiable.' });
-
-  if (!data.title) items.push({ type: 'tip', text: 'Add a professional title to immediately signal the role you\'re targeting.' });
-
-  if (!data.email) items.push({ type: 'warning', text: 'No email address listed. Recruiters need a way to contact you.' });
-
-  if (!data.summary)
-    items.push({ type: 'tip', text: 'A professional summary helps frame your experience. Aim for 2-3 sentences.' });
-  else if (data.summary.length < 60)
-    items.push({ type: 'tip', text: 'Your summary is quite short. Consider expanding it to highlight your strengths.' });
-  else items.push({ type: 'good', text: 'Your professional summary gives good context for your application.' });
-
-  if (data.experience.length === 0)
-    items.push({ type: 'warning', text: 'No work experience added yet. Even internships or personal work count.' });
-  else {
-    const missingDesc = data.experience.filter((e) => !e.description);
-    if (missingDesc.length > 0)
-      items.push({ type: 'tip', text: 'Some experience entries lack descriptions. Add bullet points with measurable impact.' });
-    else items.push({ type: 'good', text: 'Your experience entries include descriptions — great for showing impact.' });
-  }
-
-  if (data.skills.length < 5)
-    items.push({ type: 'tip', text: `You have ${data.skills.length} skill${data.skills.length === 1 ? '' : 's'}. Aim for 8-12 to pass ATS keyword filters.` });
-  else items.push({ type: 'good', text: 'You have a solid set of skills listed.' });
-
-  if (data.projects.length === 0)
-    items.push({ type: 'tip', text: 'Adding projects can strengthen your resume, especially for early-career roles.' });
-  else items.push({ type: 'good', text: 'Projects are included — they help demonstrate hands-on ability.' });
-
-  if (data.education.length === 0)
-    items.push({ type: 'tip', text: 'Consider adding your education, even if you have strong work experience.' });
-
-  return items;
-}
