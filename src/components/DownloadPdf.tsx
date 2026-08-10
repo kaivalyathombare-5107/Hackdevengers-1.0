@@ -2,11 +2,12 @@ import { Download } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import type { ResumeData } from '@/types';
 
-type Props = { data: ResumeData; previewRef?: React.RefObject<HTMLDivElement> };
+type Props = { data: ResumeData };
 
-export default function DownloadPdf({ data, previewRef }: Props) {
+export default function DownloadPdf({ data }: Props) {
   const handleDownload = useReactToPrint({
-    content: () => previewRef?.current || null,
+    // Directly target the DOM element by ID instead of using a React Ref
+    content: () => document.getElementById('resume-preview'),
     documentTitle: `${data.personalInfo?.firstName || 'Resume'}_${data.personalInfo?.lastName || ''}`,
     removeAfterPrint: true,
   });
