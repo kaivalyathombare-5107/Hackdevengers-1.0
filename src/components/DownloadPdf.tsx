@@ -1,15 +1,15 @@
 import { Download } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
+import type { RefObject } from 'react';
 import type { ResumeData } from '@/types';
 
-type Props = { data: ResumeData };
+type Props = { data: ResumeData; previewRef: RefObject<HTMLDivElement> };
 
-export default function DownloadPdf({ data }: Props) {
+export default function DownloadPdf({ data, previewRef }: Props) {
   const handleDownload = useReactToPrint({
-    // Directly target the DOM element by ID instead of using a React Ref
-    content: () => document.getElementById('resume-preview'),
+    // react-to-print v3+ uses contentRef instead of the old content() callback
+    contentRef: previewRef,
     documentTitle: `${data.personalInfo?.firstName || 'Resume'}_${data.personalInfo?.lastName || ''}`,
-    removeAfterPrint: true,
   });
 
   return (
