@@ -35,7 +35,7 @@ function App() {
     if (currentKey === 'projects') {
       return data.projects.every(p => p.name.trim());
     }
-    return true; // skills and template are always valid if empty, or just no strict requirements
+    return true;
   };
 
   const goNext = () => {
@@ -56,15 +56,17 @@ function App() {
   };
 
   return (
-    <div className="relative min-h-screen lg:h-screen flex flex-col lg:overflow-hidden bg-slate-50">
-      <header className="relative z-10 border-b border-slate-200 bg-white shrink-0">
+    <div className="relative min-h-screen lg:h-screen flex flex-col lg:overflow-hidden">
+      <div className="ambient-bg" />
+
+      <header className="relative z-10 border-b border-white/5 shrink-0">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm">
-              <FileText size={18} className="text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center" style={{ boxShadow: '0 0 18px rgba(0,212,255,0.4)' }}>
+              <FileText size={18} className="text-[#06121a]" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-slate-900 leading-none">ResumeForge</h1>
+              <h1 className="text-base font-bold text-white leading-none">ResumeForge</h1>
               <p className="text-[10px] text-slate-500 leading-none mt-1">Professional Resume Builder</p>
             </div>
           </div>
@@ -77,8 +79,8 @@ function App() {
 
       <main className="relative z-10 w-full flex-1 lg:overflow-hidden px-4 lg:px-8 py-4 lg:py-6">
         <div className="flex flex-col lg:flex-row gap-6 max-w-[1800px] mx-auto h-full">
-          {/* Left Form Panel */}
-          <div className="flex-1 w-full bg-white rounded-2xl flex flex-col lg:overflow-hidden min-h-[600px] lg:min-h-0 shadow-sm border border-slate-200">
+          {/* Left Form Panel — 40% on desktop/landscape */}
+          <div className="w-full lg:w-[40%] lg:shrink-0 glass-strong rounded-2xl flex flex-col lg:overflow-hidden min-h-[600px] lg:min-h-0">
             <div className="flex-1 overflow-y-auto p-5 sm:p-7 custom-scrollbar">
               <StepIndicator current={step} completion={completion} onStepClick={goToStep} />
 
@@ -89,12 +91,12 @@ function App() {
               </div>
             </div>
 
-            <div className="shrink-0 p-5 sm:p-7 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+            <div className="shrink-0 p-5 sm:p-7 border-t border-white/5 flex items-center justify-between">
               <button
                 type="button"
                 onClick={goBack}
                 disabled={step === 0}
-                className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+                className="ghost-btn flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium"
               >
                 <ChevronLeft size={16} /> Back
               </button>
@@ -105,25 +107,25 @@ function App() {
                 type="button"
                 onClick={goNext}
                 disabled={step === STEPS.length - 1 || !isStepValid()}
-                className="px-5 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+                className="neon-btn flex items-center gap-1.5 px-5 py-2.5 text-sm"
               >
                 Next <ChevronRight size={16} />
               </button>
             </div>
           </div>
 
-          {/* Right Live Preview Panel */}
-          <div className="lg:w-[22cm] xl:w-[24cm] shrink-0 lg:h-full flex flex-col bg-slate-200/50 rounded-2xl lg:overflow-hidden min-h-[600px] lg:min-h-0 border border-slate-200">
+          {/* Right Live Preview Panel — 60% on desktop/landscape */}
+          <div className="w-full lg:w-[60%] lg:shrink-0 lg:h-full flex flex-col glass-strong rounded-2xl lg:overflow-hidden min-h-[600px] lg:min-h-0">
             <div className="p-4 sm:p-5 flex-1 flex flex-col h-full lg:overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 shrink-0">
-                <span className="text-xs font-semibold tracking-wider uppercase text-slate-500">Live Preview</span>
+                <span className="text-xs font-semibold tracking-wider uppercase text-slate-400">Live Preview</span>
                 <span className="text-[10px] text-slate-500">A4 format</span>
               </div>
-              <div className="rounded-xl overflow-auto shadow-sm flex-1 bg-slate-100 flex justify-center custom-scrollbar border border-slate-200 relative">
+              <div className="rounded-xl overflow-auto shadow-2xl flex-1 bg-slate-950/40 flex justify-center custom-scrollbar border border-white/5 relative" style={{ boxShadow: '0 0 40px rgba(0,212,255,0.06)' }}>
                 <div className="absolute inset-0 overflow-auto p-4 sm:p-8 flex justify-center custom-scrollbar">
-                 <div id="resume-print-area" className="bg-white shrink-0 shadow-xl border border-slate-200 origin-top scale-[0.7] sm:scale-[0.8] lg:scale-[0.9] xl:scale-100 transition-transform" style={{ width: '21cm', minWidth: '21cm', height: '29.7cm', transformOrigin: 'top center' }}>
-  <ResumePreview ref={previewRef} data={data} />
-</div>
+                  <div id="resume-print-area" className="bg-white shrink-0 shadow-xl origin-top scale-[0.7] sm:scale-[0.8] lg:scale-[0.9] xl:scale-100 transition-transform" style={{ width: '21cm', minWidth: '21cm', height: '29.7cm', transformOrigin: 'top center' }}>
+                    <ResumePreview ref={previewRef} data={data} />
+                  </div>
                 </div>
               </div>
             </div>
