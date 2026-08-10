@@ -121,9 +121,9 @@ function App() {
               </div>
               <div className="rounded-xl overflow-auto shadow-sm flex-1 bg-slate-100 flex justify-center custom-scrollbar border border-slate-200 relative">
                 <div className="absolute inset-0 overflow-auto p-4 sm:p-8 flex justify-center custom-scrollbar">
-                  <div className="bg-white shrink-0 shadow-xl border border-slate-200 origin-top scale-[0.7] sm:scale-[0.8] lg:scale-[0.9] xl:scale-100 transition-transform" style={{ width: '21cm', minWidth: '21cm', height: '29.7cm', transformOrigin: 'top center' }}>
-                    <ResumePreview ref={previewRef} data={data} />
-                  </div>
+                 <div id="resume-print-area" className="bg-white shrink-0 shadow-xl border border-slate-200 origin-top scale-[0.7] sm:scale-[0.8] lg:scale-[0.9] xl:scale-100 transition-transform" style={{ width: '21cm', minWidth: '21cm', height: '29.7cm', transformOrigin: 'top center' }}>
+  <ResumePreview ref={previewRef} data={data} />
+</div>
                 </div>
               </div>
             </div>
