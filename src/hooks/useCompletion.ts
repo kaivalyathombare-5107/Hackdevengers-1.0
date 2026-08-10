@@ -52,6 +52,6 @@ export function useCompletion(data: ResumeData): Record<StepKey, number> {
               100
           );
 
-    return { personal, education, experience, skills, projects };
+    return { personal, education, experience, skills, projects, template: 100 };
   }, [data]);
 }

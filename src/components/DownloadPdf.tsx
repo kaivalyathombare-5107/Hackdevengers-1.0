@@ -1,52 +1,51 @@
 import { useState } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import type { ResumeData } from '@/types';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
-type Props = { data: ResumeData; previewRef: React.RefObject<HTMLDivElement> };
+type Props = { data: ResumeData; previewRef?: React.RefObject<HTMLDivElement> };
 
 export default function DownloadPdf({ data, previewRef }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleDownload = async () => {
-    if (!previewRef.current) return;
-    setLoading(true);
-    try {
-      const { jsPDF } = await import('jspdf');
-      const html2canvas = (await import('html2canvas')).default;
+    // Check if the ref is attached properly, otherwise fallback to native print
+    if (!previewRef || !previewRef.current) {
+      window.print();
+      return;
+    }
 
-      const canvas = await html2canvas(previewRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
+    try {
+      setIsGenerating(true);
+      const element = previewRef.current;
+
+      // 1. Capture the element using exact A4 pixel width constraints
+      const canvas = await html2canvas(element, {
+        scale: 2, // High resolution for crisp text
+        useCORS: true, // Ensures cross-origin images load
+        windowWidth: 794, // Strict A4 width at 96 DPI to stop CSS resizing
         logging: false,
+        backgroundColor: '#ffffff' // Ensure background is white, not transparent
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // 2. Generate PDF based on captured canvas
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      const fileName = (data.fullName || 'resume').replace(/\s+/g, '_').toLowerCase();
-      pdf.save(`${fileName}_resume.pdf`);
-    } catch (err) {
-      console.error('PDF generation failed:', err);
+      // 3. Add to PDF and trigger download
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('Resume.pdf');
+      
+    } catch (error) {
+      console.error("Failed to generate PDF:", error);
+      // Fallback in case of a canvas error
+      window.print(); 
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -54,11 +53,15 @@ export default function DownloadPdf({ data, previewRef }: Props) {
     <button
       type="button"
       onClick={handleDownload}
-      disabled={loading}
-      className="ghost-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+      disabled={isGenerating}
+      className="ghost-btn flex items-center gap-2 px-4 py-2.5 text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed"
     >
-      {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-      {loading ? 'Generating...' : 'Download PDF'}
+      {isGenerating ? (
+        <Loader2 size={16} className="animate-spin" />
+      ) : (
+        <Download size={16} />
+      )}
+      {isGenerating ? 'Generating...' : 'Download PDF'}
     </button>
   );
 }

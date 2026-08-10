@@ -32,6 +32,8 @@ export type SkillItem = {
   name: string;
 };
 
+export type ResumeTemplate = 'modern' | 'classic' | 'minimal';
+
 export type ResumeData = {
   fullName: string;
   title: string;
@@ -40,6 +42,8 @@ export type ResumeData = {
   location: string;
   website: string;
   summary: string;
+  image?: string;
+  template: ResumeTemplate;
   education: EducationItem[];
   experience: ExperienceItem[];
   skills: SkillItem[];
@@ -54,13 +58,15 @@ export const emptyResume: ResumeData = {
   location: '',
   website: '',
   summary: '',
+  image: '',
+  template: 'modern',
   education: [],
   experience: [],
   skills: [],
   projects: [],
 };
 
-export type StepKey = 'personal' | 'education' | 'experience' | 'skills' | 'projects';
+export type StepKey = 'personal' | 'education' | 'experience' | 'skills' | 'projects' | 'template';
 
 export const STEPS: { key: StepKey; label: string; icon: string }[] = [
   { key: 'personal', label: 'Personal Info', icon: 'User' },
@@ -68,6 +74,7 @@ export const STEPS: { key: StepKey; label: string; icon: string }[] = [
   { key: 'experience', label: 'Experience', icon: 'Briefcase' },
   { key: 'skills', label: 'Skills', icon: 'Sparkles' },
   { key: 'projects', label: 'Projects', icon: 'FolderGit2' },
+  { key: 'template', label: 'Template', icon: 'LayoutTemplate' },
 ];
 
 export const genId = () => Math.random().toString(36).slice(2, 10);
