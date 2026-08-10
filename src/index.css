@@ -90,7 +90,7 @@ textarea.field-input {
     margin: 0;
     size: A4 portrait;
   }
-  
+
   html, body {
     margin: 0;
     padding: 0;
@@ -98,7 +98,25 @@ textarea.field-input {
     height: 297mm;
     background-color: #ffffff;
   }
-  
+
+  body * {
+    visibility: hidden;
+  }
+
+  #resume-print-area,
+  #resume-print-area * {
+    visibility: visible;
+  }
+
+  #resume-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 210mm;
+    transform: none !important;
+    scale: 1 !important;
+  }
+
   .resume-sheet {
     width: 210mm;
     height: 297mm;
