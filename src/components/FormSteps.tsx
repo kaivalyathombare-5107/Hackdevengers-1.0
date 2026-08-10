@@ -19,22 +19,22 @@ const sectionVariants = {
 function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div className="mb-6">
-      <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{title}</h2>
-      <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
+      <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
+      <p className="text-sm text-slate-400 mt-1">{subtitle}</p>
     </div>
   );
 }
 
 function Card({ children, onRemove, onMoveUp, onMoveDown, isFirst, isLast }: { children: React.ReactNode; onRemove?: () => void; onMoveUp?: () => void; onMoveDown?: () => void; isFirst?: boolean; isLast?: boolean }) {
   return (
-    <div className="bg-white border-slate-200 shadow-sm rounded-xl p-4 relative group">
+    <div className="glass-strong rounded-xl p-4 relative group">
       <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         {onMoveUp && (
           <button
             type="button"
             onClick={onMoveUp}
             disabled={isFirst}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
             aria-label="Move Up"
           >
             <ChevronUp size={16} />
@@ -45,7 +45,7 @@ function Card({ children, onRemove, onMoveUp, onMoveDown, isFirst, isLast }: { c
             type="button"
             onClick={onMoveDown}
             disabled={isLast}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400"
             aria-label="Move Down"
           >
             <ChevronDown size={16} />
@@ -55,7 +55,7 @@ function Card({ children, onRemove, onMoveUp, onMoveDown, isFirst, isLast }: { c
           <button
             type="button"
             onClick={onRemove}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             aria-label="Remove"
           >
             <Trash2 size={16} />
@@ -72,7 +72,7 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm w-full flex items-center justify-center gap-2 py-3 text-sm font-medium"
+      className="ghost-btn w-full flex items-center justify-center gap-2 py-3 text-sm font-medium"
     >
       <Plus size={16} /> {label}
     </button>
@@ -119,22 +119,22 @@ function PersonalStep({ data, update }: Props) {
         <label className="field-label">Profile Image (Optional)</label>
         <div className="flex items-center gap-4 mt-2">
           {data.image ? (
-            <div className="relative w-16 h-16 rounded-full overflow-hidden border border-slate-200 group">
+            <div className="relative w-16 h-16 rounded-full overflow-hidden border border-white/10 group">
               <img src={data.image} alt="Profile" className="w-full h-full object-cover" />
               <button 
                 onClick={() => update('image', '')}
                 className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
               >
-                <Trash2 size={16} className="text-slate-900" />
+                <Trash2 size={16} className="text-white" />
               </button>
             </div>
           ) : (
-            <label className="w-16 h-16 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors">
-              <Upload size={20} className="text-slate-500" />
+            <label className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
+              <Upload size={20} className="text-slate-400" />
               <input type="file" accept="image/jpeg,image/png,image/jpg" className="hidden" onChange={handleImageUpload} />
             </label>
           )}
-          <span className="text-xs text-slate-500">JPG or PNG. 1:1 square ratio recommended.</span>
+          <span className="text-xs text-slate-400">JPG or PNG. 1:1 square ratio recommended.</span>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -302,7 +302,7 @@ function ExperienceStep({ data, update }: Props) {
               </div>
               <div className="sm:col-span-2 flex items-center gap-2">
                 <input type="checkbox" id={`cur-${e.id}`} checked={e.current} onChange={(ev) => edit(e.id, { current: ev.target.checked, endDate: ev.target.checked ? '' : e.endDate })} className="accent-cyan-400" />
-                <label htmlFor={`cur-${e.id}`} className="text-sm text-slate-700">I currently work here</label>
+                <label htmlFor={`cur-${e.id}`} className="text-sm text-slate-300">I currently work here</label>
               </div>
               <div className="sm:col-span-2">
                 <label className="field-label">Description</label>
@@ -353,29 +353,29 @@ function SkillsStep({ data, update }: Props) {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), add())}
         />
-        <button type="button" onClick={add} className="px-5 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors shadow-sm px-5 py-2 text-sm whitespace-nowrap">Add Skill</button>
+        <button type="button" onClick={add} className="neon-btn px-5 py-2 text-sm whitespace-nowrap">Add Skill</button>
       </div>
       <div className="space-y-2.5">
         {data.skills.map((s, index) => (
-          <div key={s.id} className="bg-white border-slate-200 shadow-sm rounded-xl p-3 flex items-center justify-between gap-3 group">
+          <div key={s.id} className="glass-strong rounded-xl p-3 flex items-center justify-between gap-3 group">
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex flex-col items-center gap-0.5">
-                <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="text-slate-600 hover:text-cyan-400 disabled:opacity-30">
+                <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="text-slate-400 hover:text-cyan-400 disabled:opacity-30">
                   <ChevronUp size={14} />
                 </button>
-                <button type="button" onClick={() => move(index, 1)} disabled={index === data.skills.length - 1} className="text-slate-600 hover:text-cyan-400 disabled:opacity-30">
+                <button type="button" onClick={() => move(index, 1)} disabled={index === data.skills.length - 1} className="text-slate-400 hover:text-cyan-400 disabled:opacity-30">
                   <ChevronDown size={14} />
                 </button>
               </div>
-              <span className="font-medium text-slate-900 truncate">{s.name}</span>
+              <span className="font-medium text-white truncate">{s.name}</span>
             </div>
-            <button type="button" onClick={() => remove(s.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-colors">
+            <button type="button" onClick={() => remove(s.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors">
               <Trash2 size={15} />
             </button>
           </div>
         ))}
         {data.skills.length === 0 && (
-          <p className="text-center text-slate-500 text-sm py-8">No skills yet. Add your first one above.</p>
+          <p className="text-center text-slate-400 text-sm py-8">No skills yet. Add your first one above.</p>
         )}
       </div>
     </div>
