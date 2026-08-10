@@ -4,7 +4,7 @@
 
 **Build a polished, ATS-friendly resume in minutes — with AI-powered feedback baked in.**
 
-### [Live Demo](https://resumeforge-henna.vercel.app/) · Report a Bug · Request a Feature
+### [Live Demo](https://resumeforge-henna.vercel.app/) · [Report a Bug](https://github.com/kaivalyathombare-5107/Hackdevengers-1.0/issues/new) · [Request a Feature](https://github.com/kaivalyathombare-5107/Hackdevengers-1.0/pulls)
 
 </div>
 
