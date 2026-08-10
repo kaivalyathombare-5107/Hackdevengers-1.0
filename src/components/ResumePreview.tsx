@@ -8,7 +8,8 @@ type Props = { data: ResumeData };
 
 const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
   return (
-    <div ref={ref} className="h-full w-full">
+    {/* ADDED id="resume-preview" HERE */}
+    <div ref={ref} id="resume-preview" className="h-full w-full bg-white">
       {data.template === 'modern' && <ModernTemplate data={data} />}
       {data.template === 'classic' && <ClassicTemplate data={data} />}
       {data.template === 'minimal' && <MinimalTemplate data={data} />}
