@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Upload } from 'lucide-react';
-import type { ResumeData, EducationItem, ExperienceItem, SkillItem, ProjectItem, ResumeTemplate } from '@/types';
+import { Plus, Trash2, GripVertical, ChevronUp, ChevronDown, Upload, RotateCcw } from 'lucide-react';
+import type { ResumeData, EducationItem, ExperienceItem, SkillItem, ProjectItem, ResumeTemplate, StepKey } from '@/types';
 import { genId } from '@/types';
 import TemplatePicker from '@/TemplatePicker';
 import BulletEditor from '@/components/BulletEditor';
@@ -8,6 +8,7 @@ import BulletEditor from '@/components/BulletEditor';
 type Props = {
   data: ResumeData;
   update: <K extends keyof ResumeData>(key: K, value: ResumeData[K]) => void;
+  resetSection: (key: StepKey) => void;
 };
 
 const sectionVariants = {
@@ -16,11 +17,22 @@ const sectionVariants = {
   exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -40 : 40 }),
 };
 
-function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+function SectionHeader({ title, subtitle, onReset }: { title: string; subtitle: string; onReset?: () => void }) {
   return (
-    <div className="mb-6">
-      <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
-      <p className="text-sm text-slate-400 mt-1">{subtitle}</p>
+    <div className="mb-6 flex items-start justify-between gap-4">
+      <div>
+        <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
+        <p className="text-sm text-slate-400 mt-1">{subtitle}</p>
+      </div>
+      {onReset && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="ghost-btn flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-red-300 hover:text-red-200 shrink-0"
+        >
+          <RotateCcw size={14} /> Reset
+        </button>
+      )}
     </div>
   );
 }
@@ -79,7 +91,7 @@ function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   );
 }
 
-export default function FormSteps({ data, update, step, direction }: Props & { step: number; direction: number }) {
+export default function FormSteps({ data, update, resetSection, step, direction }: Props & { step: number; direction: number }) {
   return (
     <motion.div
       custom={direction}
@@ -89,18 +101,18 @@ export default function FormSteps({ data, update, step, direction }: Props & { s
       exit="exit"
       transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
     >
-      {step === 0 && <PersonalStep data={data} update={update} />}
-      {step === 1 && <EducationStep data={data} update={update} />}
-      {step === 2 && <ExperienceStep data={data} update={update} />}
-      {step === 3 && <SkillsStep data={data} update={update} />}
-      {step === 4 && <ProjectsStep data={data} update={update} />}
-      {step === 5 && <TemplateStep data={data} update={update} />}
+      {step === 0 && <PersonalStep data={data} update={update} resetSection={resetSection} />}
+      {step === 1 && <EducationStep data={data} update={update} resetSection={resetSection} />}
+      {step === 2 && <ExperienceStep data={data} update={update} resetSection={resetSection} />}
+      {step === 3 && <SkillsStep data={data} update={update} resetSection={resetSection} />}
+      {step === 4 && <ProjectsStep data={data} update={update} resetSection={resetSection} />}
+      {step === 5 && <TemplateStep data={data} update={update} resetSection={resetSection} />}
     </motion.div>
   );
 }
 
 /* ---------- Personal ---------- */
-function PersonalStep({ data, update }: Props) {
+function PersonalStep({ data, update, resetSection }: Props) {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -114,7 +126,7 @@ function PersonalStep({ data, update }: Props) {
 
   return (
     <div>
-      <SectionHeader title="Personal Information" subtitle="Tell employers who you are and how to reach you." />
+      <SectionHeader title="Personal Information" subtitle="Tell employers who you are and how to reach you." onReset={() => resetSection('personal')} />
       <div className="mb-6">
         <label className="field-label">Profile Image (Optional)</label>
         <div className="flex items-center gap-4 mt-2">
@@ -178,7 +190,7 @@ function PersonalStep({ data, update }: Props) {
 }
 
 /* ---------- Education ---------- */
-function EducationStep({ data, update }: Props) {
+function EducationStep({ data, update, resetSection }: Props) {
   const add = () =>
     update('education', [
       ...data.education,
@@ -197,7 +209,7 @@ function EducationStep({ data, update }: Props) {
 
   return (
     <div>
-      <SectionHeader title="Education" subtitle="List your academic background, most recent first." />
+      <SectionHeader title="Education" subtitle="List your academic background, most recent first." onReset={() => resetSection('education')} />
       <div className="space-y-4">
         {data.education.map((e, index) => (
           <Card 
@@ -247,7 +259,7 @@ function EducationStep({ data, update }: Props) {
 }
 
 /* ---------- Experience ---------- */
-function ExperienceStep({ data, update }: Props) {
+function ExperienceStep({ data, update, resetSection }: Props) {
   const add = () =>
     update('experience', [
       ...data.experience,
@@ -266,7 +278,7 @@ function ExperienceStep({ data, update }: Props) {
 
   return (
     <div>
-      <SectionHeader title="Work Experience" subtitle="Show your career journey and key achievements." />
+      <SectionHeader title="Work Experience" subtitle="Show your career journey and key achievements." onReset={() => resetSection('experience')} />
       <div className="space-y-4">
         {data.experience.map((e, index) => (
           <Card 
@@ -326,7 +338,7 @@ function ExperienceStep({ data, update }: Props) {
 }
 
 /* ---------- Skills ---------- */
-function SkillsStep({ data, update }: Props) {
+function SkillsStep({ data, update, resetSection }: Props) {
   const [name, setName] = useInputState('');
   const add = () => {
     if (!name.trim()) return;
@@ -344,7 +356,7 @@ function SkillsStep({ data, update }: Props) {
 
   return (
     <div>
-      <SectionHeader title="Skills" subtitle="Add your technical and soft skills." />
+      <SectionHeader title="Skills" subtitle="Add your technical and soft skills." onReset={() => resetSection('skills')} />
       <div className="flex gap-2 mb-5">
         <input
           className="field-input flex-1"
@@ -383,7 +395,7 @@ function SkillsStep({ data, update }: Props) {
 }
 
 /* ---------- Projects ---------- */
-function ProjectsStep({ data, update }: Props) {
+function ProjectsStep({ data, update, resetSection }: Props) {
   const add = () =>
     update('projects', [...data.projects, { id: genId(), name: '', link: '', description: '', tech: '' }]);
   const remove = (id: string) => update('projects', data.projects.filter((p) => p.id !== id));
@@ -399,7 +411,7 @@ function ProjectsStep({ data, update }: Props) {
 
   return (
     <div>
-      <SectionHeader title="Projects" subtitle="Showcase work you're proud of. Links and tech stack help." />
+      <SectionHeader title="Projects" subtitle="Showcase work you're proud of. Links and tech stack help." onReset={() => resetSection('projects')} />
       <div className="space-y-4">
         {data.projects.map((p, index) => (
           <Card 
@@ -445,10 +457,10 @@ function ProjectsStep({ data, update }: Props) {
 }
 
 /* ---------- Template ---------- */
-function TemplateStep({ data, update }: Props) {
+function TemplateStep({ data, update, resetSection }: Props) {
   return (
     <div>
-      <SectionHeader title="Design Template" subtitle="Choose a style that fits your industry." />
+      <SectionHeader title="Design Template" subtitle="Choose a style that fits your industry." onReset={() => resetSection('template')} />
       <TemplatePicker value={data.template} onChange={(t) => update('template', t)} />
     </div>
   );
