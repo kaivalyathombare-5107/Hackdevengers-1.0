@@ -134,6 +134,7 @@ textarea.field-input {
 }
 
 /* --- PDF EXPORT PRINT STYLES --- */
+/* --- PDF EXPORT PRINT STYLES --- */
 @media print {
   @page {
     size: A4 portrait;
@@ -149,7 +150,7 @@ textarea.field-input {
   }
 
   /* Force the resume preview container to stay perfectly A4 */
-  #resume-preview, 
+  #resume-preview,
   .resume-container {
     width: 210mm !important;
     height: 297mm !important;
@@ -160,10 +161,5 @@ textarea.field-input {
     transform: none !important;
     overflow: hidden !important;
     page-break-after: avoid;
-  }
-
-  /* Hide everything else on the screen (sidebars, buttons, etc.) */
-  body > *:not(#resume-preview-wrapper) {
-    display: none !important;
   }
 }
