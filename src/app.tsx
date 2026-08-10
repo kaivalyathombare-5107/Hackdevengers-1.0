@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import type { ResumeData, StepKey } from '@/types';
@@ -10,16 +10,96 @@ import ResumePreview from '@/components/ResumePreview';
 import AiFeedback from '@/components/AiFeedback';
 import DownloadPdf from '@/components/DownloadPdf';
 
+const STORAGE_KEY = 'resumeforge:data';
+const STORAGE_STEP_KEY = 'resumeforge:step';
+
+const loadInitialData = (): ResumeData => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...emptyResume, ...parsed };
+    }
+  } catch {
+    // corrupted or inaccessible storage — fall back silently
+  }
+  return emptyResume;
+};
+
+const loadInitialStep = (): number => {
+  try {
+    const raw = localStorage.getItem(STORAGE_STEP_KEY);
+    if (raw !== null) {
+      const parsed = parseInt(raw, 10);
+      if (!Number.isNaN(parsed) && parsed >= 0 && parsed < STEPS.length) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return 0;
+};
+
 function App() {
-  const [data, setData] = useState<ResumeData>(emptyResume);
-  const [step, setStep] = useState(0);
+  const [data, setData] = useState<ResumeData>(loadInitialData);
+  const [step, setStep] = useState(loadInitialStep);
   const [direction, setDirection] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const completion = useCompletion(data);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      // storage full or unavailable — fail silently, don't break the app
+    }
+  }, [data]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_STEP_KEY, String(step));
+    } catch {
+      // ignore
+    }
+  }, [step]);
+
   const update = <K extends keyof ResumeData>(key: K, value: ResumeData[K]) =>
     setData((prev) => ({ ...prev, [key]: value }));
+
+  const resetSection = (key: StepKey) => {
+    const label = STEPS.find((s) => s.key === key)?.label || 'this section';
+    const confirmed = window.confirm(`Reset all ${label} data? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setData((prev) => {
+      switch (key) {
+        case 'personal':
+          return {
+            ...prev,
+            fullName: '',
+            title: '',
+            email: '',
+            phone: '',
+            location: '',
+            website: '',
+            summary: '',
+            image: '',
+          };
+        case 'education':
+          return { ...prev, education: [] };
+        case 'experience':
+          return { ...prev, experience: [] };
+        case 'skills':
+          return { ...prev, skills: [] };
+        case 'projects':
+          return { ...prev, projects: [] };
+        case 'template':
+          return { ...prev, template: 'modern' };
+        default:
+          return prev;
+      }
+    });
+  };
 
   const isStepValid = () => {
     const currentKey = STEPS[step].key;
@@ -86,7 +166,7 @@ function App() {
 
               <div className="mt-8">
                 <AnimatePresence mode="wait" custom={direction}>
-                  <FormSteps key={step} data={data} update={update} step={step} direction={direction} />
+                  <FormSteps key={step} data={data} update={update} resetSection={resetSection} step={step} direction={direction} />
                 </AnimatePresence>
               </div>
             </div>
