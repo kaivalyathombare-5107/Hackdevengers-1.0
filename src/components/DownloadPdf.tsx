@@ -11,17 +11,27 @@ export default function DownloadPdf({ }: Props) {
     const printArea = document.getElementById('resume-print-area');
     if (!printArea) return;
 
+    // Open the window SYNCHRONOUSLY inside the click handler so mobile
+    // browsers don't treat it as a popup and block it.
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Please allow popups for this site to download your resume.');
+      return;
+    }
+
     setLoading(true);
 
-    // Collect every stylesheet link + every inline <style> block from the host page
-    // so Tailwind utility classes render correctly in the isolated window.
-    const styleLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+    // Grab every <link rel="stylesheet"> and <style> from the host page so
+    // all Tailwind utility classes and template styles transfer correctly.
+    const styleLinks = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'))
       .map((el) => el.outerHTML)
       .join('\n');
 
     const styleBlocks = Array.from(document.querySelectorAll('style'))
       .map((el) => `<style>${el.innerHTML}</style>`)
       .join('\n');
+
+    const resumeHTML = printArea.outerHTML;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -32,8 +42,9 @@ export default function DownloadPdf({ }: Props) {
   ${styleLinks}
   ${styleBlocks}
   <style>
-    /* Reset host-app chrome; show only the resume sheet */
     @page { margin: 0; size: A4 portrait; }
+
+    *, *::before, *::after { box-sizing: border-box; }
 
     html, body {
       margin: 0;
@@ -41,7 +52,7 @@ export default function DownloadPdf({ }: Props) {
       background: #ffffff;
     }
 
-    /* Remove the scale transform that the preview panel applies */
+    /* Strip the preview-panel scale transform so it prints at true A4 size */
     #resume-print-area {
       position: relative !important;
       transform: none !important;
@@ -65,38 +76,36 @@ export default function DownloadPdf({ }: Props) {
       overflow: visible !important;
     }
 
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    body {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
   </style>
 </head>
 <body>
-  ${printArea.outerHTML}
+  ${resumeHTML}
   <script>
-    // Wait for fonts / images to load then print and close
+    // Wait for fonts / images, then open the print dialog.
     window.onload = function () {
       setTimeout(function () {
         window.print();
-        // Give the print dialog time to open before closing the tab
-        setTimeout(function () { window.close(); }, 1000);
-      }, 300);
+      }, 350);
+    };
+    // Close the tab once the user dismisses the print dialog.
+    window.onafterprint = function () {
+      window.close();
     };
   </script>
 </body>
 </html>`;
 
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const win = window.open(url, '_blank');
+    // Write the HTML directly into the already-open window — no blob URL needed,
+    // no second round-trip, works on iOS Safari and Android Chrome.
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
 
-    // Clean up the blob URL after the window has had time to load it
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-
-    // Re-enable button once the new window opens (or after a timeout)
-    if (win) {
-      win.addEventListener('afterprint', () => setLoading(false));
-      win.addEventListener('close', () => setLoading(false));
-    }
-    setTimeout(() => setLoading(false), 3000);
+    setTimeout(() => setLoading(false), 2000);
   };
 
   return (
