@@ -133,33 +133,19 @@ textarea.field-input {
   line-height: 1.75;
 }
 
-/* --- PDF EXPORT PRINT STYLES --- */
-/* --- PDF EXPORT PRINT STYLES --- */
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 0; /* Removes default browser headers and footers (URL, Date) */
-  }
+/* Print styles are handled by DownloadPdf.tsx (isolated print window) — no global @media print needed */
 
-  body {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    margin: 0;
-    padding: 0;
-    background-color: white;
-  }
+/* Subtle pulse for AI button */
+@keyframes ai-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(168, 85, 247, 0); }
+}
+.ai-pulse {
+  animation: ai-pulse 2.5s ease-in-out infinite;
+}
 
-  /* Force the resume preview container to stay perfectly A4 */
-  #resume-preview,
-  .resume-container {
-    width: 210mm !important;
-    height: 297mm !important;
-    min-height: 297mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    transform: none !important;
-    overflow: hidden !important;
-    page-break-after: avoid;
-  }
+/* Feedback panel */
+.feedback-item {
+  border-left: 2px solid #22d3ee;
+  padding-left: 0.75rem;
 }
