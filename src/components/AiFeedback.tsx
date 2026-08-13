@@ -1,8 +1,55 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, X } from 'lucide-react';
 import type { ResumeData } from '@/types';
+
+const LOADING_STEPS = [
+  'Reading your resume…',
+  'Checking experience & skills…',
+  'Scoring your impact…',
+  'Drafting feedback…',
+  'Almost done…',
+];
+
+function LoadingMessages() {
+  const [idx, setIdx] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setIdx((prev) => (prev < LOADING_STEPS.length - 1 ? prev + 1 : prev));
+    }, 1800);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-12 gap-4">
+      <div className="relative w-10 h-10">
+        <Loader2 size={40} className="text-violet-400 animate-spin" />
+        <Sparkles size={16} className="absolute inset-0 m-auto text-fuchsia-300" />
+      </div>
+      <motion.p
+        key={idx}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="text-sm text-slate-300 font-medium"
+      >
+        {LOADING_STEPS[idx]}
+      </motion.p>
+      <div className="flex gap-1.5 mt-1">
+        {LOADING_STEPS.map((_, i) => (
+          <span
+            key={i}
+            className={`block h-1 rounded-full transition-all duration-500 ${i <= idx ? 'w-5 bg-violet-400' : 'w-2 bg-slate-600'}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type Props = { data: ResumeData };
 
@@ -123,12 +170,7 @@ export default function AiFeedback({ data }: Props) {
               </button>
             </div>
 
-            {loading && (
-              <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <Loader2 size={32} className="text-violet-400 animate-spin" />
-                <p className="text-sm text-slate-400">Analyzing your resume...</p>
-              </div>
-            )}
+            {loading && <LoadingMessages />}
 
             {!loading && !feedbackText && (
               <div className="border border-slate-700 rounded-2xl p-4 bg-slate-950/70 text-sm text-slate-300">
