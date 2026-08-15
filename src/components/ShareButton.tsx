@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Share2, Check, Loader2, Link } from 'lucide-react';
 import type { ResumeData } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +10,15 @@ export default function ShareButton({ data }: Props) {
   const [state, setState] = useState<'idle' | 'loading' | 'copied' | 'error'>('idle');
   const [shareUrl, setShareUrl] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const root = document.createElement('div');
+    root.id = 'share-modal-portal';
+    document.body.appendChild(root);
+    setPortalRoot(root);
+    return () => { document.body.removeChild(root); };
+  }, []);
 
   const handleShare = async () => {
     setState('loading');
@@ -32,6 +42,51 @@ export default function ShareButton({ data }: Props) {
     }
   };
 
+  const overlay = (
+    <AnimatePresence>
+      {showModal && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+            className="glass-strong rounded-2xl p-6 w-full max-w-md shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center">
+                <Check size={20} className="text-green-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">Link ready!</h3>
+                <p className="text-xs text-slate-400">Copied to clipboard</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4">
+              <Link size={13} className="text-slate-500 shrink-0" />
+              <span className="text-xs text-slate-300 truncate flex-1">{shareUrl}</span>
+            </div>
+            <p className="text-[11px] text-slate-500 mb-4">
+              Anyone with this link can view your resume. It's stored securely and you can share it directly with recruiters.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigator.clipboard.writeText(shareUrl)}
+                className="ghost-btn flex-1 py-2 text-sm"
+              >Copy Again</button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="neon-btn flex-1 py-2 text-sm"
+              >Done</button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
     <>
       <button
@@ -48,49 +103,7 @@ export default function ShareButton({ data }: Props) {
           {state === 'loading' ? 'Saving…' : state === 'copied' ? 'Link copied!' : state === 'error' ? 'Failed' : 'Share'}
         </span>
       </button>
-
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
-              className="glass-strong rounded-2xl p-6 w-full max-w-md shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center">
-                  <Check size={20} className="text-green-400" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-base">Link ready!</h3>
-                  <p className="text-xs text-slate-400">Copied to clipboard</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 mb-4">
-                <Link size={13} className="text-slate-500 shrink-0" />
-                <span className="text-xs text-slate-300 truncate flex-1">{shareUrl}</span>
-              </div>
-              <p className="text-[11px] text-slate-500 mb-4">
-                Anyone with this link can view your resume. It's stored securely and you can share it directly with recruiters.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigator.clipboard.writeText(shareUrl)}
-                  className="ghost-btn flex-1 py-2 text-sm"
-                >Copy Again</button>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="neon-btn flex-1 py-2 text-sm"
-                >Done</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {portalRoot && createPortal(overlay, portalRoot)}
     </>
   );
 }
