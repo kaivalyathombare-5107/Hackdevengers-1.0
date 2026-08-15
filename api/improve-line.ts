@@ -50,7 +50,7 @@ async function callGroq(apiKey: string, prompt: string): Promise<string | null> 
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 200,
       temperature: 0.7,
@@ -63,7 +63,7 @@ async function callGroq(apiKey: string, prompt: string): Promise<string | null> 
 
 async function callGemini(apiKey: string, prompt: string): Promise<string | null> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
