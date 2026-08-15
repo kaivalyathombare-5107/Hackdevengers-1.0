@@ -9,39 +9,29 @@ import FormSteps from '@/components/FormSteps';
 import ResumePreview from '@/components/ResumePreview';
 import AiFeedback from '@/components/AiFeedback';
 import DownloadPdf from '@/components/DownloadPdf';
+import ShareButton from '@/components/ShareButton';
+import TailorModal from '@/components/TailorModal';
+import ExportDocx from '@/components/ExportDocx';
 
-const STORAGE_KEY = 'resumeforge:data';
-const STORAGE_STEP_KEY = 'resumeforge:step';
+const STORAGE_KEY = 'resumeforge-data';
 
-const loadInitialData = (): ResumeData => {
+function loadInitialData(): ResumeData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      // Merge over emptyResume so any fields added in later versions still get defaults
       return { ...emptyResume, ...parsed };
     }
   } catch {
-    // corrupted or inaccessible storage — fall back silently
+    // Corrupt or inaccessible storage — fall back to a blank resume
   }
   return emptyResume;
-};
-
-const loadInitialStep = (): number => {
-  try {
-    const raw = localStorage.getItem(STORAGE_STEP_KEY);
-    if (raw !== null) {
-      const parsed = parseInt(raw, 10);
-      if (!Number.isNaN(parsed) && parsed >= 0 && parsed < STEPS.length) return parsed;
-    }
-  } catch {
-    // ignore
-  }
-  return 0;
-};
+}
 
 function App() {
   const [data, setData] = useState<ResumeData>(loadInitialData);
-  const [step, setStep] = useState(loadInitialStep);
+  const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -51,53 +41,41 @@ function App() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
-      // storage full or unavailable — fail silently, don't break the app
+      // Storage full/unavailable — data just won't persist this session
     }
   }, [data]);
 
+  // Load a shared resume from URL if ?share=<id> is present
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_STEP_KEY, String(step));
-    } catch {
-      // ignore
-    }
-  }, [step]);
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get('share');
+    if (!shareId) return;
+    fetch(`/api/load-resume?id=${encodeURIComponent(shareId)}`)
+      .then((r) => r.json())
+      .then(({ data: shared }) => {
+        if (shared) setData({ ...emptyResume, ...shared });
+      })
+      .catch(console.error)
+      .finally(() => {
+        // Remove the ?share= param from the URL without reload
+        const url = new URL(window.location.href);
+        url.searchParams.delete('share');
+        window.history.replaceState({}, '', url.toString());
+      });
+  }, []);
 
   const update = <K extends keyof ResumeData>(key: K, value: ResumeData[K]) =>
     setData((prev) => ({ ...prev, [key]: value }));
 
-  const resetSection = (key: StepKey) => {
-    const label = STEPS.find((s) => s.key === key)?.label || 'this section';
-    const confirmed = window.confirm(`Reset all ${label} data? This cannot be undone.`);
-    if (!confirmed) return;
-
+  // Resets only the given fields back to their default (empty) values,
+  // leaving every other section of the resume untouched.
+  const resetFields = (keys: (keyof ResumeData)[]) => {
     setData((prev) => {
-      switch (key) {
-        case 'personal':
-          return {
-            ...prev,
-            fullName: '',
-            title: '',
-            email: '',
-            phone: '',
-            location: '',
-            website: '',
-            summary: '',
-            image: '',
-          };
-        case 'education':
-          return { ...prev, education: [] };
-        case 'experience':
-          return { ...prev, experience: [] };
-        case 'skills':
-          return { ...prev, skills: [] };
-        case 'projects':
-          return { ...prev, projects: [] };
-        case 'template':
-          return { ...prev, template: 'modern' };
-        default:
-          return prev;
-      }
+      const next = { ...prev };
+      keys.forEach((k) => {
+        (next as any)[k] = emptyResume[k];
+      });
+      return next;
     });
   };
 
@@ -151,7 +129,10 @@ function App() {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <ExportDocx data={data} />
             <DownloadPdf data={data} previewRef={previewRef} />
+            <ShareButton data={data} />
+            <TailorModal data={data} update={update} />
             <AiFeedback data={data} />
           </div>
         </div>
@@ -166,7 +147,7 @@ function App() {
 
               <div className="mt-8">
                 <AnimatePresence mode="wait" custom={direction}>
-                  <FormSteps key={step} data={data} update={update} resetSection={resetSection} step={step} direction={direction} />
+                  <FormSteps key={step} data={data} update={update} resetFields={resetFields} step={step} direction={direction} />
                 </AnimatePresence>
               </div>
             </div>
