@@ -4,7 +4,28 @@ import ModernTemplate from '@/resume/MordenTemplate';
 import ClassicTemplate from '@/resume/ClassicTemplate';
 import MinimalTemplate from '@/resume/MinimalTemplate';
 
+type Props = { data: ResumeData };import { forwardRef } from 'react';
+import type { ResumeData } from '@/types';
+import ModernTemplate from '@/resume/MordenTemplate';
+import ClassicTemplate from '@/resume/ClassicTemplate';
+import MinimalTemplate from '@/resume/MinimalTemplate';
+import CreativeTemplate from '@/resume/CreativeTemplate';
+
 type Props = { data: ResumeData };
+
+const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
+  return (
+    <div ref={ref} className="h-full w-full">
+      {data.template === 'modern'   && <ModernTemplate   data={data} />}
+      {data.template === 'classic'  && <ClassicTemplate  data={data} />}
+      {data.template === 'minimal'  && <MinimalTemplate  data={data} />}
+      {data.template === 'creative' && <CreativeTemplate data={data} />}
+    </div>
+  );
+});
+
+ResumePreview.displayName = 'ResumePreview';
+export default ResumePreview;
 
 const ResumePreview = forwardRef<HTMLDivElement, Props>(({ data }, ref) => {
   return (
