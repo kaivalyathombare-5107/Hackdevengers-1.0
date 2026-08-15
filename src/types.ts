@@ -32,7 +32,7 @@ export type SkillItem = {
   name: string;
 };
 
-export type ResumeTemplate = 'modern' | 'classic' | 'minimal';
+export type ResumeTemplate = 'modern' | 'classic' | 'minimal' | 'creative';
 
 export type ResumeData = {
   fullName: string;
