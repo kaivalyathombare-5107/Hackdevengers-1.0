@@ -6,9 +6,10 @@ type Props = {
 };
 
 const OPTIONS: { id: ResumeTemplate; label: string; hint: string; preview: string }[] = [
-  { id: 'modern', label: 'Modern', hint: 'Sidebar + accent colors', preview: 'bg-slate-900' },
-  { id: 'classic', label: 'Classic', hint: 'Traditional serif layout', preview: 'bg-stone-100' },
-  { id: 'minimal', label: 'Minimal', hint: 'Clean and spacious', preview: 'bg-white border border-slate-200' },
+  { id: 'modern',   label: 'Modern',   hint: 'Sidebar + accent colors',    preview: 'bg-slate-900' },
+  { id: 'classic',  label: 'Classic',  hint: 'Traditional serif layout',   preview: 'bg-stone-100' },
+  { id: 'minimal',  label: 'Minimal',  hint: 'Clean and spacious',         preview: 'bg-white border border-slate-200' },
+  { id: 'creative', label: 'Creative', hint: 'Bold violet gradient header', preview: 'bg-gradient-to-br from-violet-600 to-indigo-700' },
 ];
 
 export default function TemplatePicker({ value, onChange }: Props) {
