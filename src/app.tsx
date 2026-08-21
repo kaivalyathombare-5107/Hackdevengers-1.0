@@ -12,6 +12,11 @@ import DownloadPdf from '@/components/DownloadPdf';
 import ShareButton from '@/components/ShareButton';
 import TailorModal from '@/components/TailorModal';
 import ExportDocx from '@/components/ExportDocx';
+// ── New features ─────────────────────────────────────────────────────────────
+import ResumeUploader from '@/components/ResumeUploader';
+import ResumeManager from '@/components/ResumeManager';
+import InterviewCoach from '@/components/InterviewCoach';
+import ProgressDashboard from '@/components/ProgressDashboard';
 
 const STORAGE_KEY = 'resumeforge-data';
 
@@ -20,7 +25,6 @@ function loadInitialData(): ResumeData {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Merge over emptyResume so any fields added in later versions still get defaults
       return { ...emptyResume, ...parsed };
     }
   } catch {
@@ -41,7 +45,7 @@ function App() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
-      // Storage full/unavailable — data just won't persist this session
+      // Storage full/unavailable
     }
   }, [data]);
 
@@ -57,7 +61,6 @@ function App() {
       })
       .catch(console.error)
       .finally(() => {
-        // Remove the ?share= param from the URL without reload
         const url = new URL(window.location.href);
         url.searchParams.delete('share');
         window.history.replaceState({}, '', url.toString());
@@ -67,50 +70,47 @@ function App() {
   const update = <K extends keyof ResumeData>(key: K, value: ResumeData[K]) =>
     setData((prev) => ({ ...prev, [key]: value }));
 
-  // Resets only the given fields back to their default (empty) values,
-  // leaving every other section of the resume untouched.
   const resetFields = (keys: (keyof ResumeData)[]) => {
     setData((prev) => {
       const next = { ...prev };
-      keys.forEach((k) => {
-        (next as any)[k] = emptyResume[k];
-      });
+      keys.forEach((k) => { (next as any)[k] = emptyResume[k]; });
       return next;
     });
   };
 
+  // Called when a resume is parsed from upload OR loaded from saved versions
+  const handleResumeLoaded = (newData: ResumeData) => {
+    setData(newData);
+    setStep(0); // Jump back to step 1 so user can review
+  };
+
   const isStepValid = () => {
     const currentKey = STEPS[step].key;
-    if (currentKey === 'personal') {
-      return !!(data.fullName.trim() && data.email.trim());
-    }
-    if (currentKey === 'education') {
-      return data.education.every(e => e.school.trim() && e.degree.trim());
-    }
-    if (currentKey === 'experience') {
-      return data.experience.every(e => e.company.trim() && e.position.trim());
-    }
-    if (currentKey === 'projects') {
-      return data.projects.every(p => p.name.trim());
-    }
+    if (currentKey === 'personal') return !!(data.fullName.trim() && data.email.trim());
+    if (currentKey === 'education') return data.education.every(e => e.school.trim() && e.degree.trim());
+    if (currentKey === 'experience') return data.experience.every(e => e.company.trim() && e.position.trim());
+    if (currentKey === 'projects') return data.projects.every(p => p.name.trim());
     return true;
   };
 
   const goNext = () => {
-    if (step < STEPS.length - 1 && isStepValid()) {
-      setDirection(1);
-      setStep((s) => s + 1);
-    }
+    if (step < STEPS.length - 1 && isStepValid()) { setDirection(1); setStep((s) => s + 1); }
   };
   const goBack = () => {
-    if (step > 0) {
-      setDirection(-1);
-      setStep((s) => s - 1);
-    }
+    if (step > 0) { setDirection(-1); setStep((s) => s - 1); }
   };
-  const goToStep = (i: number) => {
-    setDirection(i > step ? 1 : -1);
-    setStep(i);
+  const goToStep = (i: number) => { setDirection(i > step ? 1 : -1); setStep(i); };
+
+  const resetSection = (key: StepKey) => {
+    const keyMap: Record<StepKey, (keyof ResumeData)[]> = {
+      personal: ['fullName', 'title', 'email', 'phone', 'location', 'website', 'summary', 'image'],
+      education: ['education'],
+      experience: ['experience'],
+      skills: ['skills'],
+      projects: ['projects'],
+      template: ['template'],
+    };
+    resetFields(keyMap[key] ?? []);
   };
 
   return (
@@ -118,21 +118,33 @@ function App() {
       <div className="ambient-bg" />
 
       <header className="relative z-10 border-b border-white/5 shrink-0">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center" style={{ boxShadow: '0 0 18px rgba(0,212,255,0.4)' }}>
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center"
+              style={{ boxShadow: '0 0 18px rgba(0,212,255,0.4)' }}
+            >
               <FileText size={18} className="text-[#06121a]" />
             </div>
             <div>
               <h1 className="text-base font-bold text-white leading-none">ResumeForge</h1>
-              <p className="text-[10px] text-slate-500 leading-none mt-1">Professional Resume Builder</p>
+              <p className="text-[10px] text-slate-500 leading-none mt-1">AI Resume & Interview Coach</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+
+          {/* Action buttons — two rows on mobile, single row on desktop */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
+            {/* Row 1: file actions */}
+            <ResumeUploader onParsed={handleResumeLoaded} />
+            <ResumeManager currentData={data} onLoad={handleResumeLoaded} />
             <ExportDocx data={data} />
             <DownloadPdf data={data} previewRef={previewRef} />
             <ShareButton data={data} />
+            {/* Row 2: AI actions */}
             <TailorModal data={data} update={update} />
+            <InterviewCoach data={data} />
+            <ProgressDashboard />
             <AiFeedback data={data} />
           </div>
         </div>
@@ -140,14 +152,21 @@ function App() {
 
       <main className="relative z-10 w-full flex-1 lg:overflow-hidden px-4 lg:px-8 py-4 lg:py-6">
         <div className="flex flex-col lg:flex-row gap-6 max-w-[1800px] mx-auto h-full">
-          {/* Left Form Panel — 40% on desktop/landscape */}
+
+          {/* Left Form Panel — 40% on desktop */}
           <div className="w-full lg:w-[40%] lg:shrink-0 glass-strong rounded-2xl flex flex-col lg:overflow-hidden min-h-[600px] lg:min-h-0">
             <div className="flex-1 overflow-y-auto p-5 sm:p-7 custom-scrollbar">
               <StepIndicator current={step} completion={completion} onStepClick={goToStep} />
-
               <div className="mt-8">
                 <AnimatePresence mode="wait" custom={direction}>
-                  <FormSteps key={step} data={data} update={update} resetFields={resetFields} step={step} direction={direction} />
+                  <FormSteps
+                    key={step}
+                    data={data}
+                    update={update}
+                    resetSection={resetSection}
+                    step={step}
+                    direction={direction}
+                  />
                 </AnimatePresence>
               </div>
             </div>
@@ -175,16 +194,23 @@ function App() {
             </div>
           </div>
 
-          {/* Right Live Preview Panel — 60% on desktop/landscape */}
+          {/* Right Live Preview Panel — 60% on desktop */}
           <div className="w-full lg:w-[60%] lg:shrink-0 lg:h-full flex flex-col glass-strong rounded-2xl lg:overflow-hidden min-h-[600px] lg:min-h-0">
             <div className="p-4 sm:p-5 flex-1 flex flex-col h-full lg:overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 shrink-0">
                 <span className="text-xs font-semibold tracking-wider uppercase text-slate-400">Live Preview</span>
                 <span className="text-[10px] text-slate-500">A4 format</span>
               </div>
-              <div className="rounded-xl overflow-auto shadow-2xl flex-1 bg-slate-950/40 flex justify-center custom-scrollbar border border-white/5 relative" style={{ boxShadow: '0 0 40px rgba(0,212,255,0.06)' }}>
+              <div
+                className="rounded-xl overflow-auto shadow-2xl flex-1 bg-slate-950/40 flex justify-center custom-scrollbar border border-white/5 relative"
+                style={{ boxShadow: '0 0 40px rgba(0,212,255,0.06)' }}
+              >
                 <div className="absolute inset-0 overflow-auto p-4 sm:p-8 flex justify-center custom-scrollbar">
-                  <div id="resume-print-area" className="bg-white shrink-0 shadow-xl origin-top scale-[0.7] sm:scale-[0.8] lg:scale-[0.9] xl:scale-100 transition-transform" style={{ width: '21cm', minWidth: '21cm', height: '29.7cm', transformOrigin: 'top center' }}>
+                  <div
+                    id="resume-print-area"
+                    className="bg-white shrink-0 shadow-xl origin-top scale-[0.7] sm:scale-[0.8] lg:scale-[0.9] xl:scale-100 transition-transform"
+                    style={{ width: '21cm', minWidth: '21cm', height: '29.7cm', transformOrigin: 'top center' }}
+                  >
                     <ResumePreview ref={previewRef} data={data} />
                   </div>
                 </div>
