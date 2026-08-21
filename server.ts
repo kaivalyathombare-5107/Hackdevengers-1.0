@@ -16,18 +16,132 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-function getGeminiClient(): GoogleGenAI {
-  const apiKey = (
+function getGroqApiKey(): string {
+  return (process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || '').trim();
+}
+
+function getGeminiApiKey(): string {
+  return (
     process.env.GEMINI_API_KEY ||
     process.env.GOOGLE_API_KEY ||
     process.env.GOOGLE_GENAI_API_KEY ||
     process.env.VITE_GEMINI_API_KEY ||
     ''
   ).trim();
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY (or GOOGLE_API_KEY) environment variable is required.');
+}
+
+/**
+ * Universal AI caller with Groq as Primary and Gemini as Fallback
+ */
+async function callAiWithFallback({
+  systemPrompt,
+  userPrompt,
+  jsonMode = false,
+  maxTokens = 800,
+  temperature = 0.5,
+}: {
+  systemPrompt?: string;
+  userPrompt: string;
+  jsonMode?: boolean;
+  maxTokens?: number;
+  temperature?: number;
+}): Promise<string> {
+  const errors: string[] = [];
+
+  // 1. PRIMARY: Groq (llama-3.3-70b-versatile)
+  const groqKey = getGroqApiKey();
+  if (groqKey) {
+    try {
+      const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [];
+      if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+      messages.push({ role: 'user', content: userPrompt });
+
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${groqKey}`,
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+          ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+        }),
+      });
+
+      if (res.ok) {
+        const d = await res.json();
+        const text = d?.choices?.[0]?.message?.content?.trim();
+        if (text) return text;
+      } else {
+        const errText = await res.text();
+        console.warn('Groq primary attempt returned non-200:', res.status, errText);
+        errors.push(`Groq (${res.status}): ${errText.slice(0, 150)}`);
+      }
+    } catch (err: any) {
+      console.warn('Groq network error:', err?.message || err);
+      errors.push(`Groq: ${err?.message || 'failed'}`);
+    }
+  } else {
+    errors.push('Groq key not provided');
   }
-  return new GoogleGenAI({ apiKey });
+
+  // 2. FALLBACK: Google Gemini
+  const geminiKey = getGeminiApiKey();
+  if (geminiKey) {
+    try {
+      const ai = new GoogleGenAI({ apiKey: geminiKey });
+      const promptText = systemPrompt ? `${systemPrompt}\n\n${userPrompt}` : userPrompt;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{ role: 'user', parts: [{ text: promptText }] }],
+        config: {
+          maxOutputTokens: maxTokens,
+          temperature,
+          ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
+        },
+      });
+
+      const text = response.text?.trim();
+      if (text) return text;
+    } catch (err: any) {
+      console.warn('Gemini SDK attempt error:', err?.message || err);
+      errors.push(`Gemini SDK: ${err?.message || 'failed'}`);
+    }
+
+    try {
+      const promptText = systemPrompt ? `${systemPrompt}\n\n${userPrompt}` : userPrompt;
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: promptText }] }],
+            generationConfig: {
+              maxOutputTokens: maxTokens,
+              temperature,
+              ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
+            },
+          }),
+        }
+      );
+      if (res.ok) {
+        const d = await res.json();
+        const text = d?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) return text;
+      }
+    } catch (err: any) {
+      errors.push(`Gemini REST: ${err?.message || 'failed'}`);
+    }
+  } else {
+    errors.push('Gemini key not provided');
+  }
+
+  throw new Error(`AI generation failed (Groq Primary + Gemini Fallback). Details: ${errors.join(' | ')}`);
 }
 
 async function startServer() {
@@ -47,32 +161,19 @@ async function startServer() {
     try {
       const data = req.body?.data;
       if (!data) {
-        return res.status(400).json({ error: 'Invalid payload' });
+        return res.status(400).json({ error: 'Invalid payload: resume data missing' });
       }
 
-      const ai = getGeminiClient();
       const prompt = buildPrompt(data);
+      const systemPrompt =
+        "You are an expert, highly critical resume reviewer. Be extremely strict. If the resume lacks fundamental information (like name, email, or has completely empty sections for education and experience), you MUST give it a very low score (e.g., 1/10 or 2/10) and bluntly state what is missing. Only give high scores (8+) if the resume is detailed, has impactful bullet points, and is fully populated. Do not hallucinate strengths if there is no data. Provide a score out of 10 at the beginning, followed by concise, actionable feedback with strengths and weaknesses.";
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-          {
-            role: 'user',
-            parts: [{
-              text: "You are an expert, highly critical resume reviewer. Be extremely strict. If the resume lacks fundamental information (like name, email, or has completely empty sections for education and experience), you MUST give it a very low score (e.g., 1/10 or 2/10) and bluntly state what is missing. Only give high scores (8+) if the resume is detailed, has impactful bullet points, and is fully populated. Do not hallucinate strengths if there is no data. Provide a score out of 10 at the beginning, followed by concise, actionable feedback.\n\n" + prompt
-            }]
-          }
-        ],
-        config: {
-          maxOutputTokens: 500,
-          temperature: 0.7,
-        }
+      const content = await callAiWithFallback({
+        systemPrompt,
+        userPrompt: prompt,
+        maxTokens: 600,
+        temperature: 0.6,
       });
-
-      const content = response.text;
-      if (!content) {
-        return res.status(500).json({ error: 'No response from Gemini.' });
-      }
 
       res.status(200).json({ analysis: content });
     } catch (error: any) {
@@ -89,28 +190,19 @@ async function startServer() {
         return res.status(400).json({ error: 'Missing text payload' });
       }
 
-      const ai = getGeminiClient();
       let prompt = `Improve this resume bullet point to make it more professional, impactful, action-oriented, and quantified where appropriate. Keep it concise.\n`;
       if (context) {
         prompt += `Context of this role/section: ${context}\n`;
       }
       prompt += `Original Text: ${text}\nImproved Text (return just the single improved bullet point without extra explanation):`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: {
-          maxOutputTokens: 200,
-          temperature: 0.7,
-        }
+      const improved = await callAiWithFallback({
+        userPrompt: prompt,
+        maxTokens: 200,
+        temperature: 0.6,
       });
 
-      const improved = response.text?.trim();
-      if (!improved) {
-        return res.status(500).json({ error: 'No response from Gemini.' });
-      }
-
-      res.status(200).json({ improved });
+      res.status(200).json({ improved: improved.replace(/^["']|["']$/g, '').trim() });
     } catch (error: any) {
       console.error('improve-line error:', error);
       res.status(500).json({ error: error.message || 'Internal server error' });
@@ -125,25 +217,16 @@ async function startServer() {
         return res.status(400).json({ error: 'Missing job description' });
       }
 
-      const ai = getGeminiClient();
       const prompt = buildTailorPrompt(resumeData, jobDescription);
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: {
-          maxOutputTokens: 1000,
-          temperature: 0.4,
-          responseMimeType: "application/json",
-        }
+      const raw = await callAiWithFallback({
+        userPrompt: prompt,
+        jsonMode: true,
+        maxTokens: 1000,
+        temperature: 0.4,
       });
 
-      const text = response.text?.trim();
-      if (!text) {
-        return res.status(500).json({ error: 'AI response empty' });
-      }
-
-      const parsed = JSON.parse(text);
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
       res.status(200).json(parsed);
     } catch (error: any) {
       console.error('tailor-resume error:', error);
@@ -155,7 +238,6 @@ async function startServer() {
   app.post("/api/generate-questions", async (req, res) => {
     try {
       const { resumeData, jobDescription } = req.body || {};
-      const ai = getGeminiClient();
 
       const prompt = `Based on the candidate's resume and target job description (if provided), generate realistic, role-tailored interview questions.
 Resume Info:
@@ -190,22 +272,15 @@ Return a JSON object matching this structure strictly:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: {
-          maxOutputTokens: 1500,
-          temperature: 0.5,
-          responseMimeType: "application/json",
-        }
+      const raw = await callAiWithFallback({
+        userPrompt: prompt,
+        jsonMode: true,
+        maxTokens: 1500,
+        temperature: 0.5,
       });
 
-      const text = response.text?.trim();
-      if (!text) {
-        return res.status(500).json({ error: 'AI response empty' });
-      }
-
-      const parsed = JSON.parse(text);
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
       res.status(200).json(parsed);
     } catch (error: any) {
       console.error('generate-questions error:', error);
@@ -221,7 +296,6 @@ Return a JSON object matching this structure strictly:
         return res.status(400).json({ error: 'Answer is required' });
       }
 
-      const ai = getGeminiClient();
       const prompt = `You are a senior tech hiring manager and interview coach evaluating a candidate's response.
 Question (${category || 'general'}): "${question}"
 Candidate's Answer: "${answer}"
@@ -240,22 +314,15 @@ Return this exact JSON structure:
   "improvedAnswer": "A polished, exemplar version of what a stellar response would look like."
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: {
-          maxOutputTokens: 1000,
-          temperature: 0.4,
-          responseMimeType: "application/json",
-        }
+      const raw = await callAiWithFallback({
+        userPrompt: prompt,
+        jsonMode: true,
+        maxTokens: 1000,
+        temperature: 0.4,
       });
 
-      const text = response.text?.trim();
-      if (!text) {
-        return res.status(500).json({ error: 'AI response empty' });
-      }
-
-      const parsed = JSON.parse(text);
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
       res.status(200).json(parsed);
     } catch (error: any) {
       console.error('evaluate-answer error:', error);
@@ -271,7 +338,12 @@ Return this exact JSON structure:
         return res.status(400).json({ error: 'Missing file data' });
       }
 
-      const ai = getGeminiClient();
+      const geminiKey = getGeminiApiKey();
+      if (!geminiKey) {
+        return res.status(500).json({ error: 'GEMINI_API_KEY environment variable is required for PDF/DOCX document parsing.' });
+      }
+
+      const ai = new GoogleGenAI({ apiKey: geminiKey });
       const prompt = `Extract the structured resume information from this document into the following JSON format.
 Return ONLY valid JSON matching this schema:
 {
