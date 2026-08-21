@@ -17,9 +17,15 @@ function getSupabase() {
 }
 
 function getGeminiClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = (
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY ||
+    process.env.VITE_GEMINI_API_KEY ||
+    ''
+  ).trim();
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is required');
+    throw new Error('GEMINI_API_KEY (or GOOGLE_API_KEY) environment variable is required.');
   }
   return new GoogleGenAI({ apiKey });
 }

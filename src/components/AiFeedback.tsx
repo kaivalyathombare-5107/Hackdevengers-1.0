@@ -93,8 +93,15 @@ export default function AiFeedback({ data }: Props) {
       });
 
       if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || 'AI feedback service failed.');
+        let errorMsg = 'AI feedback service failed.';
+        try {
+          const errJson = await response.json();
+          errorMsg = errJson.error || errJson.message || errorMsg;
+        } catch {
+          const text = await response.text();
+          if (text) errorMsg = text;
+        }
+        throw new Error(errorMsg);
       }
 
       const result = await response.json();
@@ -109,13 +116,8 @@ export default function AiFeedback({ data }: Props) {
       const message = err instanceof Error ? err.message : 'Unable to reach the AI service.';
       console.error('AI feedback error:', message);
       setFeedbackText(
-        'Generic Resume Feedback — Fallback (AI service unavailable)\n\n' +
-        'Your resume has a good foundation. Here are standard best practices to ensure it stands out:\n\n' +
-        '1. Ensure all contact information is present.\n' +
-        '2. Keep the summary concise and focused on your strengths.\n' +
-        '3. Include measurable achievements in your experience section.\n' +
-        '4. Prioritize relevant skills and align them with the job description.\n' +
-        '5. Avoid leaving any core sections completely blank.'
+        `AI Service Notice: ${message}\n\n` +
+        'Tip: Make sure GEMINI_API_KEY (or GROQ_API_KEY) is added to your environment variables on Vercel / hosting provider, and trigger a redeployment.'
       );
     } finally {
       setLoading(false);
