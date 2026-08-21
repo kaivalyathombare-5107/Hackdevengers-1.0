@@ -78,3 +78,59 @@ export const STEPS: { key: StepKey; label: string; icon: string }[] = [
 ];
 
 export const genId = () => Math.random().toString(36).slice(2, 10);
+
+// ── Interview Coach ─────────────────────────────────────────────────────────
+
+export type QuestionCategory = 'behavioral' | 'technical';
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
+export type InterviewQuestion = {
+  id: string;
+  category: QuestionCategory;
+  domain?: string; // e.g. 'DSA', 'Web Dev', 'System Design'
+  difficulty: Difficulty;
+  question: string;
+};
+
+export type AnswerEvaluation = {
+  clarityScore: number;       // 1–10
+  relevanceScore: number;     // 1–10
+  structureScore: number;     // 1–10 (STAR format)
+  confidenceScore: number;    // 1–10
+  overallScore: number;       // 1–10
+  overallFeedback: string;
+  strengths: string[];
+  improvements: string[];
+  improvedAnswer: string;
+};
+
+export type InterviewSession = {
+  id: string;
+  date: string;              // ISO string
+  questions: InterviewQuestion[];
+  answers: Record<string, string>;       // questionId → answer text
+  evaluations: Record<string, AnswerEvaluation>; // questionId → evaluation
+  averageScore: number;
+  jdUsed?: string;
+};
+
+// ── Saved Resume Versions ───────────────────────────────────────────────────
+
+export type SavedResume = {
+  id: string;
+  name: string;
+  data: ResumeData;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ── Progress Tracking ───────────────────────────────────────────────────────
+
+export type ProgressEntry = {
+  id: string;
+  date: string;
+  resumeScore: number | null;
+  jdMatchScore: number | null;
+  interviewAvgScore: number | null;
+  sessionsCompleted: number;
+};
