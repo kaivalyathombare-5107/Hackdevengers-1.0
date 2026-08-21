@@ -4,7 +4,7 @@ import type { ResumeData } from '@/types';
 
 type Props = { data: ResumeData; previewRef?: React.RefObject<HTMLDivElement> };
 
-export default function DownloadPdf({ }: Props) {
+export default function DownloadPdf(_props: Props) {
   const [loading, setLoading] = useState(false);
 
   const handleDownload = () => {

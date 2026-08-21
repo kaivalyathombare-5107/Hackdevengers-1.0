@@ -8,15 +8,8 @@ import StepIndicator from '@/components/StepIndicator';
 import FormSteps from '@/components/FormSteps';
 import ResumePreview from '@/components/ResumePreview';
 import AiFeedback from '@/components/AiFeedback';
-import DownloadPdf from '@/components/DownloadPdf';
-import ShareButton from '@/components/ShareButton';
-import TailorModal from '@/components/TailorModal';
-import ExportDocx from '@/components/ExportDocx';
-// ── New features ─────────────────────────────────────────────────────────────
 import ResumeUploader from '@/components/ResumeUploader';
-import ResumeManager from '@/components/ResumeManager';
-import InterviewCoach from '@/components/InterviewCoach';
-import ProgressDashboard from '@/components/ProgressDashboard';
+import HeaderMenuCard from '@/components/HeaderMenuCard';
 
 const STORAGE_KEY = 'resumeforge-data';
 
@@ -117,7 +110,7 @@ function App() {
     <div className="relative min-h-screen lg:h-screen flex flex-col lg:overflow-hidden">
       <div className="ambient-bg" />
 
-      <header className="relative z-10 border-b border-white/5 shrink-0">
+      <header className="relative z-30 border-b border-white/5 shrink-0">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
           {/* Logo */}
           <div className="flex items-center gap-2.5 shrink-0">
@@ -133,19 +126,16 @@ function App() {
             </div>
           </div>
 
-          {/* Action buttons — two rows on mobile, single row on desktop */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
-            {/* Row 1: file actions */}
+          {/* Header Action Controls: Upload & AI Feedback kept outside, all other tools organized into Menu Card */}
+          <div id="header-actions" className="flex items-center gap-2 sm:gap-2.5 flex-wrap justify-end">
             <ResumeUploader onParsed={handleResumeLoaded} />
-            <ResumeManager currentData={data} onLoad={handleResumeLoaded} />
-            <ExportDocx data={data} />
-            <DownloadPdf data={data} previewRef={previewRef} />
-            <ShareButton data={data} />
-            {/* Row 2: AI actions */}
-            <TailorModal data={data} update={update} />
-            <InterviewCoach data={data} />
-            <ProgressDashboard />
             <AiFeedback data={data} />
+            <HeaderMenuCard
+              data={data}
+              update={update}
+              onLoad={handleResumeLoaded}
+              previewRef={previewRef}
+            />
           </div>
         </div>
       </header>

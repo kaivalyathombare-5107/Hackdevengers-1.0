@@ -1,0 +1,6 @@
+{
+  "name": "ResumeForge",
+  "description": "AI-powered resume builder, analyzer, tailor, and interview coach with live preview and multi-format exports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
